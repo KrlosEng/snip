@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Schibsted_Grotesk } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
+const sans = Schibsted_Grotesk({ variable: "--font-schibsted", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
@@ -23,13 +24,9 @@ const themeScript = `(function(){try{var t=localStorage.getItem('snip-theme')||'
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" suppressHydrationWarning className={mono.variable}>
+    <html lang="es" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <link rel="preconnect" href="https://api.fontshare.com" />
-        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font -- Fontshare no está en next/font */}
-        <link href="https://api.fontshare.com/v2/css?f[]=pilcrow-rounded@400,500,700&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-dvh">
         <Providers>{children}</Providers>
