@@ -3,103 +3,94 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ------------------------------------------------------------------
-   Snip · tokens. Dirección "Colour chapters" (taste-skill, semilla
-   1627843826): pizarra, salvia y rubor en campos planos, oliva como
-   acento. La landing usa los campos a pantalla completa (.poster);
-   las pantallas de la app usan los neutros de abajo y el oliva solo
-   en datos y en la acción principal.
+   Snip · tokens. Estilo tomado del modelo "Dala" (DESIGN.md): un vacío negro
+   puro, un solo violeta para la acción, ámbar como chispa y titulares enormes
+   en peso 400. En la landing y el acceso manda el vacío (.void); la app usa
+   estos mismos colores con superficies mínimas para poder trabajar en ella.
 ------------------------------------------------------------------- */
 :root {
-  --bg: oklch(0.955 0.004 230);
-  --surface: oklch(0.985 0.002 230);
-  --surface-2: oklch(0.925 0.006 230);
-  --line: oklch(0.885 0.007 230);
-  --line-strong: oklch(0.8 0.01 230);
-  --ink: #1c1c1c;
-  --ink-2: #38424a;
-  --ink-3: #5b666e;
-  --brand: #2c3620;
-  --brand-strong: #1e2516;
-  --brand-soft: #dde5d8;
-  --brand-ink: #e3e2da;
-  --chart: #4e6338;
-  --ring: oklch(0.42 0.06 130 / 0.28);
-  --success: oklch(0.5 0.12 155);
-  --success-soft: oklch(0.94 0.035 155);
-  --danger: oklch(0.52 0.17 25);
-  --danger-soft: oklch(0.95 0.025 25);
-  --warn: oklch(0.55 0.12 70);
-  --warn-soft: oklch(0.95 0.04 85);
-  --violet: #6f7f8a;
-  --chart-2: #a6b3bc;
-  --chart-3: #d6c4b8;
-
-  --field-1: #a6b3bc;
-  --field-2: #b7c8be;
-  --field-3: #d6c4b8;
-  --field-4: #2c3620;
-  --field-ink: #1c1c1c;
-  --field-4-ink: #e3e2da;
+  --bg: #f7f7f9;
+  --surface: #ffffff;
+  --surface-2: #efeff3;
+  --line: #e4e4ea;
+  --line-strong: #c9c9d3;
+  --ink: #0a0a0a;
+  --ink-2: #44444c;
+  --ink-3: #6b6b75;
+  --brand: #8052ff;
+  --brand-strong: #6a3be6;
+  --brand-soft: #ece6ff;
+  --brand-ink: #ffffff;
+  --chart: #6a3be6;
+  --ring: rgb(128 82 255 / 0.35);
+  --success: #15846e;
+  --success-soft: #def2ec;
+  --danger: #c0392b;
+  --danger-soft: #fbe6e3;
+  --warn: #a8700a;
+  --warn-soft: #fdf1d6;
+  --violet: #8a8a96;
+  --chart-2: #e09a00;
+  --chart-3: #15846e;
 
   --shadow-1: none;
   --shadow-2: none;
-  --shadow-3: 0 18px 40px -16px oklch(0.2 0.01 230 / 0.28);
-  --stamp: none;
+  --shadow-3: 0 18px 40px -16px rgb(10 10 10 / 0.25);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --bg: #141414;
-  --surface: #1b1b1b;
-  --surface-2: #232323;
-  --line: #2c2c2c;
-  --line-strong: #3a3a3a;
-  --ink: #e9e8e2;
-  --ink-2: #bdbcb5;
-  --ink-3: #94938c;
-  --brand: #b7c8be;
-  --brand-strong: #cad8cf;
-  --brand-soft: #26302a;
-  --brand-ink: #161a17;
-  --chart: #a9c08e;
-  --ring: oklch(0.8 0.04 160 / 0.3);
-  --success: oklch(0.74 0.12 155);
-  --success-soft: oklch(0.29 0.04 155);
-  --danger: oklch(0.72 0.15 25);
-  --danger-soft: oklch(0.3 0.06 25);
-  --warn: oklch(0.8 0.12 75);
-  --warn-soft: oklch(0.32 0.05 75);
-  --violet: #a6b3bc;
-  --chart-2: #6f7f8a;
-  --chart-3: #9a8a80;
-  --shadow-3: 0 18px 40px -16px oklch(0 0 0 / 0.7);
+  --bg: #000000;
+  --surface: #0b0b0d;
+  --surface-2: #151518;
+  --line: #222226;
+  --line-strong: #34343a;
+  --ink: #ffffff;
+  --ink-2: #bdbdbd;
+  --ink-3: #9a9a9a;
+  --brand: #8052ff;
+  --brand-strong: #9a75ff;
+  --brand-soft: #1b1233;
+  --brand-ink: #ffffff;
+  --chart: #8052ff;
+  --ring: rgb(128 82 255 / 0.5);
+  --success: #3fbfa5;
+  --success-soft: #0c2a24;
+  --danger: #ff7a6b;
+  --danger-soft: #2e1512;
+  --warn: #ffb829;
+  --warn-soft: #2e2208;
+  --violet: #9a9a9a;
+  --chart-2: #ffb829;
+  --chart-3: #15846e;
+  --shadow-3: 0 18px 40px -16px rgb(0 0 0 / 0.8);
   color-scheme: dark;
 }
 
-/* La landing es una fila de carteles: siempre en sus colores, con o sin tema oscuro. */
-.poster {
-  --bg: #dfe3e1;
-  --surface: #f4f5f3;
-  --surface-2: #e9ece9;
-  --line: #c3c9c6;
-  --line-strong: #8e9ba4;
-  --ink: #1c1c1c;
-  --ink-2: #2c343a;
-  --ink-3: #38424a;
-  --brand: #2c3620;
-  --brand-strong: #1e2516;
-  --brand-soft: #c9d4c3;
-  --brand-ink: #e3e2da;
-  --ring: oklch(0.42 0.06 130 / 0.3);
-  --success: oklch(0.45 0.11 155);
-  --success-soft: oklch(0.92 0.04 155);
-  --danger: oklch(0.47 0.16 25);
-  --danger-soft: oklch(0.93 0.03 25);
-  color-scheme: light;
-  background: var(--bg);
-  color: var(--ink);
+/* La landing y el acceso son siempre el vacío negro, con o sin tema oscuro. */
+.void {
+  --bg: #000000;
+  --surface: #0b0b0d;
+  --surface-2: #151518;
+  --line: #222226;
+  --line-strong: #3a3a41;
+  --ink: #ffffff;
+  --ink-2: #bdbdbd;
+  --ink-3: #9a9a9a;
+  --brand: #8052ff;
+  --brand-strong: #9a75ff;
+  --brand-soft: #1b1233;
+  --brand-ink: #ffffff;
+  --ring: rgb(128 82 255 / 0.5);
+  --success: #3fbfa5;
+  --success-soft: #0c2a24;
+  --danger: #ff7a6b;
+  --danger-soft: #2e1512;
+  color-scheme: dark;
+  background: #000;
+  color: #fff;
 }
 
 @theme inline {
@@ -123,15 +114,14 @@
   --color-warn-soft: var(--warn-soft);
   --color-violet: var(--violet);
   --color-chart: var(--chart);
-  --color-field-1: var(--field-1);
-  --color-field-2: var(--field-2);
-  --color-field-3: var(--field-3);
-  --color-field-4: var(--field-4);
-  --color-field-ink: var(--field-ink);
-  --color-field-4-ink: var(--field-4-ink);
+  --color-iris: #8052ff;
+  --color-saffron: #ffb829;
+  --color-verdant: #15846e;
+  --color-ash: #9a9a9a;
+  --color-mist: #bdbdbd;
 
-  --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 
   --shadow-1: var(--shadow-1);
@@ -153,6 +143,7 @@
     font-size: 16px;
     line-height: 1.5;
     letter-spacing: 0;
+    font-feature-settings: "ss01" on;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -244,10 +235,3 @@
   .js [data-rise]:not([data-shown]) { opacity: 0; transform: translateY(24px); }
 }
 
-/* ---------------------- Obturador (hero) ---------------------- */
-@keyframes shutter { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
-@keyframes settle { from { transform: scale(1.12); } to { transform: scale(1); } }
-@media (prefers-reduced-motion: no-preference) {
-  .js .shutter { animation: shutter 1.1s var(--ease-out) both; }
-  .js .shutter > img { animation: settle 1.5s var(--ease-out) both; }
-}

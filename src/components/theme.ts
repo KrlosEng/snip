@@ -3,9 +3,9 @@ export type Theme = "light" | "dark" | "system";
 export function currentTheme(): Theme {
   try {
     const t = localStorage.getItem("snip-theme");
-    return t === "light" || t === "dark" ? t : "system";
+    return t === "light" || t === "system" ? t : "dark";
   } catch {
-    return "system";
+    return "dark";
   }
 }
 

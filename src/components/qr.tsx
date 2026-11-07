@@ -21,7 +21,7 @@ export function QrPreview({ value, className }: { value: string; className?: str
   }, [value]);
 
   return (
-    <div className={cx("relative aspect-square rounded-xl bg-[oklch(0.995_0.004_80)] p-3", className)}>
+    <div className={cx("relative aspect-square rounded-xl bg-white p-3", className)}>
       {svg ? (
         <motion.div
           key={value}

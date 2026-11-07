@@ -77,8 +77,8 @@ export function AuthForm({ mode, providers, initialError }: { mode: "login" | "r
   return (
     <Stagger className="w-full">
       <Item>
-        <h1 className="text-[2rem] leading-tight font-bold">{mode === "login" ? "Qué bueno verte" : "Crea tu cuenta"}</h1>
-        <p className="mt-2 text-ink-2">
+        <h1 className="text-[2.5rem] leading-[1.05] font-normal tracking-[-0.04em]">{mode === "login" ? "Qué bueno verte" : "Crea tu cuenta"}</h1>
+        <p className="mt-3 text-[18px] leading-[1.5] font-extralight text-ink">
           {mode === "login" ? "Entra para ver cómo van tus enlaces." : "Enlaces permanentes, alias propios y analíticas de cada clic. Gratis."}
         </p>
       </Item>
@@ -175,7 +175,7 @@ export function AuthForm({ mode, providers, initialError }: { mode: "login" | "r
             </>
           )}
         </p>
-        <div className="rounded-xl border border-dashed border-line-strong p-4 text-center">
+        <div className="pt-2 text-center">
           <p className="mb-3 text-[13px] text-ink-2">¿Solo quieres ver cómo funciona?</p>
           <DemoButton size="md" className="w-full" />
         </div>

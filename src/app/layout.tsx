@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Schibsted_Grotesk } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const sans = Schibsted_Grotesk({ variable: "--font-schibsted", subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
+const sans = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["200", "400", "600", "700"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
@@ -14,13 +14,13 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#a6b3bc" },
-    { media: "(prefers-color-scheme: dark)", color: "#141414" },
+    { media: "(prefers-color-scheme: light)", color: "#000000" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };
 
 /** Aplica el tema antes de pintar para evitar el parpadeo. */
-const themeScript = `(function(){try{var t=localStorage.getItem('snip-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';document.documentElement.classList.add('js');}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem('snip-theme')||'dark';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';document.documentElement.classList.add('js');}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

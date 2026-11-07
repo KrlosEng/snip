@@ -87,7 +87,7 @@ function Sidebar({ user }: { user: ShellUser }) {
 
       <div className="mt-auto">
         <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-line bg-bg/60 p-2">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-field-2 text-sm font-bold text-field-ink">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-ink">
             {user.name.trim().charAt(0).toUpperCase() || "S"}
           </span>
           <div className="min-w-0 flex-1">

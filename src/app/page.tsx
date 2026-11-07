@@ -1,291 +1,194 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { getUser } from "@/lib/auth";
 import { DemoButton } from "@/components/demo-button";
-import { QrPreview } from "@/components/qr";
 import { RiseObserver } from "@/components/landing/rise";
-import { ActionTile, CtaTile, ResultRow, ShortenProvider } from "@/components/landing/shorten-board";
-import { DepartureBoard } from "@/components/landing/departure-board";
-import {
-  AliasFragment,
-  ChannelsFragment,
-  ClicksFragment,
-  CsvFragment,
-  DevicesFragment,
-  GoneFragment,
-  HOST,
-  QrFragment,
-  TileTitle,
-} from "@/components/landing/fragments";
+import { Constellation } from "@/components/landing/constellation";
+import { CtaForm, HeroForm, ResultSection, ShortenProvider } from "@/components/landing/void-shorten";
+import { pill } from "@/components/landing/styles";
+import { ClicksVisual, FactsVisual, QrVisual } from "@/components/landing/visuals";
 
 /**
- * Landing de Snip. Dirección "The well-kept board" (taste-skill, semilla 1713703384):
- * la página es un tablero de mosaicos pegados con 8px de separación, como las páginas
- * de funciones de Apple o Figma, pero con una pieza real del producto en cada mosaico.
- * Idea: lo que sale de un enlace corto (su QR, sus clics, su reporte, su aviso de
- * vencido) se vuelve una pieza del tablero.
+ * Landing de Snip, siguiendo el modelo de diseño "Dala" (DESIGN.md): vacío negro
+ * puro, un solo violeta para la acción, ámbar como chispa, titulares enormes en
+ * peso 400 y texto ultraligero. Sin tarjetas ni bordes. La imagen de marca es una
+ * constelación de triángulos que forma el logo de Snip; cada chispa ámbar que
+ * llega es un clic aterrizando.
  */
 
-const PHOTOS = {
-  wall: { src: "/media/condesa-wall-copa-playstation.jpg", w: 1024, h: 683, alt: "Carteles pegados y despegados en un muro de la colonia Condesa, Ciudad de México" },
-  flyer: { src: "/media/sugar-shack-bus-trip.jpg", w: 1023, h: 828, alt: "Volante amarillo en un cristal con tiras para arrancar que llevan el teléfono" },
-  market: { src: "/media/stallshidalgomkt.jpg", w: 1920, h: 1285, alt: "Puestos de comida y ropa vistos desde arriba en el Mercado Hidalgo de Guanajuato" },
-  menu: { src: "/media/menu-american-coffee-qr-codes-the-hague.jpg", w: 1920, h: 3413, alt: "Menú impreso de una cafetería con dos códigos QR para ver la carta e Instagram" },
-};
+const label = "text-[14px] leading-[1.2] font-semibold tracking-[0.025em] uppercase";
+const h2 = "mt-5 text-[clamp(2.5rem,5.4vw,4.875rem)] leading-[1.02] font-normal tracking-[-0.04em]";
+const body = "mt-6 max-w-[480px] text-[18px] leading-[1.5] font-extralight";
 
-const CREDITS = [
-  ["Condesa Wall (Copa Playstation)", "Carl Campbell", "CC BY-SA 2.0", "https://www.flickr.com/photos/10404073@N05/8104110543"],
-  ["Sugar Shack Bus Trip", "Indrid__Cold", "CC BY-SA 2.0", "https://www.flickr.com/photos/29442760@N00/25005834983"],
-  ["StallsHidalgoMkt", "AlejandroLinaresGarcia", "CC BY-SA 4.0", "https://commons.wikimedia.org/w/index.php?curid=11581203"],
-  ["Menu American Coffee QR Codes, The Hague (2023) 01", "Donald Trung Quoc Don", "CC BY-SA 4.0", "https://commons.wikimedia.org/w/index.php?curid=132776869"],
-];
-
-const STAGES = [
-  { grow: 12, color: "bg-field-1", time: "cinco segundos", text: "Primero pegas el enlace largo y eliges un alias, si quieres." },
-  { grow: 30, color: "bg-field-2", time: "una tarde", text: "Luego lo imprimes en el volante o el menú, o lo mandas por WhatsApp." },
-  { grow: 58, color: "bg-[#1c1c1c] text-[#e3e2da]", time: "las semanas que dure", text: "Después cada visita llega a tu panel con país, dispositivo y canal." },
-];
-
-const LETTERS = [
-  { ch: "s", h: "78%", bg: "bg-field-2", grow: 5 },
-  { ch: "n", h: "96%", bg: "bg-field-3", grow: 5 },
-  { ch: "i", h: "88%", bg: "bg-field-1", grow: 3 },
-  { ch: "p", h: "100%", bg: "bg-field-4 text-field-4-ink", grow: 5 },
-];
-
-type Photo = (typeof PHOTOS)[keyof typeof PHOTOS];
-
-function Pic({ p, priority, className = "" }: { p: Photo; priority?: boolean; className?: string }) {
+function Mark({ className = "size-7" }: { className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- fotos ya optimizadas, recortadas por CSS
-    <img
-      src={p.src}
-      width={p.w}
-      height={p.h}
-      alt={p.alt}
-      loading={priority ? "eager" : "lazy"}
-      decoding="async"
-      className={`h-full w-full object-cover grayscale contrast-[1.05] ${className}`}
-    />
+    <svg viewBox="0 0 32 32" className={className} aria-hidden>
+      <g fill="none" stroke="#8052ff" strokeWidth="2.6" strokeLinecap="round">
+        <circle cx="11" cy="21.5" r="3.2" />
+        <circle cx="21" cy="21.5" r="3.2" />
+        <path d="M13 19 L22 8M19 19 L10 8" />
+      </g>
+    </svg>
   );
 }
 
-/** Un mosaico: rectángulo plano, un solo radio, texto arriba a la izquierda. */
-const tile = "relative overflow-hidden rounded-lg p-6";
+/** Dos columnas que se alternan: texto y visual, como el modelo. */
+function Block({ id, kicker, title, text, visual, flip }: { id: string; kicker: string; title: string; text: string; visual: ReactNode; flip?: boolean }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-t`} className="mx-auto max-w-[1280px] px-6 py-24 md:py-[120px]">
+      <div className="grid items-center gap-14 md:grid-cols-2 md:gap-20">
+        <div data-rise className={flip ? "md:order-2" : ""}>
+          <p className={`${label} text-saffron`}>{kicker}</p>
+          <h2 id={`${id}-t`} className={h2}>
+            {title}
+          </h2>
+          <p className={body}>{text}</p>
+        </div>
+        <div data-rise style={{ ["--i" as string]: 1 }} className={`flex ${flip ? "md:order-1 md:justify-start" : "md:justify-end"}`}>
+          {visual}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default async function Home() {
   const user = await getUser();
 
   return (
-    <div className="poster min-h-dvh overflow-x-clip p-2 md:p-3">
+    <div className="void min-h-dvh overflow-x-clip">
       <RiseObserver />
       <ShortenProvider>
-        {/* ---------- Barra superior hecha de mosaicos ---------- */}
-        <header>
-          <nav aria-label="Principal" className="grid h-[60px] grid-cols-[60px_1fr_auto] gap-2 text-[17px] font-semibold">
-            <Link href="/" aria-label="Snip, inicio" className="grid place-items-center rounded-lg bg-[#1c1c1c] text-[#e3e2da]">
-              <svg viewBox="0 0 32 32" className="size-7" aria-hidden>
-                <g fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-                  <circle cx="11" cy="21.5" r="3.2" />
-                  <circle cx="21" cy="21.5" r="3.2" />
-                  <path d="M13 19 L22 8M19 19 L10 8" />
-                </g>
-              </svg>
-            </Link>
-            <div className="flex items-center gap-6 rounded-lg bg-surface px-5 lg:pl-[calc(50vw-80px)]">
-              <a href="#tablero" className="hidden transition-opacity hover:opacity-60 lg:inline">tablero</a>
-              <a href="#salidas" className="hidden transition-opacity hover:opacity-60 lg:inline">qué te llevas</a>
-              <a href="#pasos" className="hidden transition-opacity hover:opacity-60 lg:inline">cómo funciona</a>
-              <a href="#empezar" className="transition-opacity hover:opacity-60">empezar</a>
-            </div>
-            <Link href={user ? "/dashboard" : "/login"} className="grid place-items-center rounded-lg bg-[#1c1c1c] px-6 text-[#e3e2da] transition-colors hover:bg-black">
-              {user ? "mi panel" : "entrar"}
-            </Link>
+        {/* ---------- Navegación: transparente sobre el vacío ---------- */}
+        <header className="mx-auto flex h-20 max-w-[1280px] items-center justify-between px-6">
+          <Link href="/" aria-label="Snip, inicio" className="flex items-center gap-2.5">
+            <Mark />
+            <span className="text-[22px] leading-none font-semibold tracking-[-0.02em]">Snip</span>
+          </Link>
+          <nav aria-label="Principal" className="hidden items-center gap-9 md:flex">
+            {[
+              ["Clics", "#clics"],
+              ["QR", "#qr"],
+              ["Privacidad", "#privacidad"],
+            ].map(([t, h]) => (
+              <a key={h} href={h} className={`${label} text-ash transition-colors hover:text-white`}>
+                {t}
+              </a>
+            ))}
           </nav>
+          <div className="flex items-center gap-6">
+            {!user && (
+              <Link href="/login" className={`${label} hidden text-ash transition-colors hover:text-white sm:block`}>
+                Entrar
+              </Link>
+            )}
+            <Link href={user ? "/dashboard" : "/register"} className={`${pill} h-11`}>
+              {user ? "Mi panel" : "Empezar"}
+            </Link>
+          </div>
         </header>
 
-        <main className="mt-2 grid gap-2">
-          {/* ---------- Hero: tablero de dos por dos ---------- */}
-          <section aria-labelledby="titulo" className="grid gap-2 sm:grid-cols-2 lg:h-[calc(100svh-5.5rem)] lg:min-h-[600px] lg:grid-rows-2">
-            <div className={`${tile} flex min-h-[34svh] items-end bg-surface lg:min-h-0`}>
-              <h1 id="titulo" className="text-[clamp(5.5rem,22vw,6.5rem)] leading-[0.88] font-extrabold tracking-[-0.05em] md:text-[clamp(6rem,12.5vw,11.875rem)]">
+        <main>
+          {/* ---------- Hero: titular a la izquierda, la constelación a la derecha ---------- */}
+          <section aria-labelledby="titulo" className="mx-auto grid max-w-[1280px] items-center gap-6 px-6 pt-4 pb-16 md:min-h-[calc(100svh-5rem)] md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:pb-20">
+            <div>
+              <h1 id="titulo" className="text-[clamp(2.35rem,5vw,4.25rem)] leading-[1.02] font-normal tracking-[-0.045em]">
                 <span className="mask-line">
-                  <span>snip</span>
+                  <span>Corta el enlace.</span>
                 </span>
-                <span className="sr-only"> · acortador de enlaces con analíticas</span>
+                <span className="mask-line">
+                  <span>Mira quién llega.</span>
+                </span>
               </h1>
-            </div>
-
-            <div className="shutter aspect-[4/3] overflow-hidden rounded-lg sm:aspect-auto">
-              <Pic p={PHOTOS.market} priority className="object-[50%_60%]" />
-            </div>
-
-            <div className="hidden overflow-hidden rounded-lg lg:block">
-              <Pic p={PHOTOS.wall} priority className="drift" />
-            </div>
-
-            <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2 lg:col-span-1">
-              <div className={`${tile} bg-[#1c1c1c] text-[#e3e2da]`}>
-                <p className="max-w-[16ch] text-[24px] leading-[1.08] sm:text-[28px] font-bold tracking-[-0.03em]">Acorta enlaces, imprime su QR y mira quién hizo cada clic.</p>
-              </div>
-              <div className={`${tile} min-h-[300px] bg-field-4 text-field-4-ink`}>
-                <ActionTile loggedIn={Boolean(user)} />
+              <p className={`${label} mt-10 text-saffron`}>Acortador de enlaces con analíticas</p>
+              <p className="mt-4 max-w-[480px] text-[18px] leading-[1.5] font-extralight">
+                Pega un enlace largo y llévate uno corto, su código QR y el registro de cada visita: país, dispositivo y de dónde vino.
+              </p>
+              <div className="mt-10 max-w-[560px]">
+                <HeroForm loggedIn={Boolean(user)} />
               </div>
             </div>
-          </section>
-
-          <ResultRow />
-
-          {/* ---------- Tablero de enlaces (lista principal del producto) ---------- */}
-          <section id="tablero" aria-labelledby="tablero-t" className="rounded-lg bg-[#1c1c1c] p-4 text-[#e3e2da] md:p-6">
-            <h2 id="tablero-t" data-rise className="mb-6 max-w-[18ch] px-2 text-[40px] leading-[0.98] font-bold tracking-[-0.04em] md:mb-8 md:text-[clamp(2.5rem,5vw,4.75rem)] md:leading-[0.92]">
-              tus enlaces, en un tablero
-            </h2>
-            <div data-rise style={{ ["--i" as string]: 1 }}>
-              <DepartureBoard />
+            <div className="relative h-[52svh] min-h-[340px] md:h-[min(76svh,700px)]">
+              <Constellation />
             </div>
           </section>
 
-          {/* ---------- Mosaicos: lo que sale de cada enlace ---------- */}
-          <section id="salidas" aria-labelledby="salidas-t" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-12 lg:auto-rows-[88px]">
-            <div data-rise className={`${tile} flex flex-col justify-end bg-field-4 text-field-4-ink sm:col-span-2 lg:col-span-6 lg:row-span-2`}>
-              <h2 id="salidas-t" className="max-w-[16ch] text-[40px] leading-[0.98] font-bold tracking-[-0.04em]">
-                lo que te llevas de cada enlace
-              </h2>
-            </div>
+          <ResultSection />
 
-            <div data-rise style={{ ["--i" as string]: 1 }} className={`${tile} bg-field-3 lg:col-span-3 lg:row-span-4`}>
-              <TileTitle>el código qr</TileTitle>
-              <QrFragment />
-            </div>
+          <Block
+            id="clics"
+            kicker="Cada visita"
+            title="Cada clic deja una luz."
+            text="País, ciudad, dispositivo, navegador y el sitio de donde llegó la visita, en un panel que se llena con cada clic. Los bots no cuentan."
+            visual={<ClicksVisual />}
+          />
 
-            <div data-rise style={{ ["--i" as string]: 2 }} className={`${tile} bg-field-2 lg:col-span-3 lg:row-span-4`}>
-              <TileTitle>por dispositivo</TileTitle>
-              <DevicesFragment />
-            </div>
+          <Block
+            id="qr"
+            kicker="Para imprimir"
+            title="Tu enlace, en papel."
+            text="Cada enlace trae su código QR en PNG y SVG: para volantes, menús, tarjetas o el stand de un evento. Se escanea y se cuenta igual que un clic."
+            visual={<QrVisual />}
+            flip
+          />
 
-            <div data-rise style={{ ["--i" as string]: 1 }} className={`${tile} bg-field-1 sm:col-span-2 lg:col-span-6 lg:row-span-4`}>
-              <TileTitle>los clics, día por día</TileTitle>
-              <ClicksFragment />
-            </div>
+          <Block
+            id="privacidad"
+            kicker="Sin rastrearte"
+            title="Rápido, y sin guardar tu IP."
+            text="Te mandamos al destino de inmediato y guardamos el clic después, para que la analítica nunca haga esperar a nadie."
+            visual={<FactsVisual />}
+          />
 
-            <div data-rise style={{ ["--i" as string]: 2 }} className={`${tile} bg-surface sm:col-span-2 lg:col-span-6 lg:row-span-2`}>
-              <TileTitle>de dónde llegan</TileTitle>
-              <ChannelsFragment />
-            </div>
-
-            <div data-rise className={`${tile} bg-field-1 sm:col-span-2 lg:col-span-6 lg:row-span-4`}>
-              <TileTitle>el reporte para Excel</TileTitle>
-              <CsvFragment />
-            </div>
-
-            <div data-rise style={{ ["--i" as string]: 1 }} className="aspect-[3/4] overflow-hidden rounded-lg lg:col-span-3 lg:row-span-4 lg:aspect-auto">
-              <Pic p={PHOTOS.menu} className="object-[40%_30%]" />
-            </div>
-
-            <div data-rise style={{ ["--i" as string]: 2 }} className={`${tile} bg-surface lg:col-span-3 lg:row-span-2`}>
-              <TileTitle>tu propio alias</TileTitle>
-              <AliasFragment />
-            </div>
-
-            <div data-rise style={{ ["--i" as string]: 3 }} className={`${tile} bg-field-3 lg:col-span-3 lg:row-span-2`}>
-              <TileTitle>el aviso de vencido</TileTitle>
-              <GoneFragment />
-            </div>
-          </section>
-
-          {/* ---------- Cómo funciona: la barra de avance ---------- */}
-          <section id="pasos" aria-labelledby="pasos-t" className="rounded-lg bg-field-3 p-6 text-field-ink md:p-12">
-            <h2 id="pasos-t" data-rise className="mb-12 text-[40px] leading-[0.98] font-bold tracking-[-0.04em] md:mb-16 md:text-[clamp(3rem,6.4vw,6.5rem)] md:leading-[0.92]">
-              de la tienda al clic
-            </h2>
-            <ol data-ui className="flex flex-col gap-1.5 lg:flex-row" aria-label="Cuánto tarda cada paso">
-              {STAGES.map((s, i) => (
-                <li key={s.time} data-rise style={{ ["--i" as string]: i, flexGrow: s.grow }} className="flex min-w-0 flex-col lg:basis-0">
-                  <div className={`${s.color} flex min-h-[96px] items-start rounded-lg p-5 lg:h-[22vh] lg:min-h-0`}>
-                    <span className="text-[22px] leading-tight font-bold tracking-[-0.02em] lg:text-[28px]">{s.time}</span>
-                  </div>
-                  <p className="mt-4 mb-4 max-w-[24ch] text-[17px] leading-snug lg:mb-0 lg:pr-4">{s.text}</p>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          {/* ---------- Cierre: el mosaico de acción, recortado de una fila más larga ---------- */}
-          <section id="empezar" aria-labelledby="empezar-t" className="-mx-2 grid gap-2 md:-mx-3 md:grid-cols-12">
-            <div className="hidden overflow-hidden rounded-r-lg md:col-span-2 md:block">
-              <Pic p={PHOTOS.flyer} className="object-[50%_40%]" />
-            </div>
-            <div data-rise className={`${tile} mx-2 grid gap-8 bg-field-4 p-6 text-field-4-ink md:col-span-8 md:mx-0 md:min-h-[360px] md:p-10 lg:grid-cols-[1fr_auto]`}>
-              <CtaTile />
-              <div className="hidden lg:block">
-                <QrPreview value={`https://${HOST}`} className="w-[176px]" />
-                <p className="mt-3 max-w-[176px] text-[15px] leading-snug">Escanéalo con tu celular: es un QR de Snip hacia esta misma página.</p>
+          {/* ---------- Cierre ---------- */}
+          <section id="empezar" aria-labelledby="empezar-t" className="mx-auto max-w-[1280px] px-6 py-24 md:py-[120px]">
+            <div className="grid items-center gap-14 md:grid-cols-2 md:gap-20">
+              <div data-rise>
+                <p className={`${label} text-saffron`}>Empieza ahora</p>
+                <h2 id="empezar-t" className={h2}>
+                  Pega tu primer enlace.
+                </h2>
+                <p className={body}>Sin cuenta dura 7 días; con una cuenta gratis es permanente y ves cada clic.</p>
+                <div className="mt-10 max-w-[560px]">
+                  <CtaForm />
+                </div>
+              </div>
+              <div data-rise style={{ ["--i" as string]: 1 }} className="relative h-[320px] md:h-[440px]">
+                <Constellation shape="none" />
               </div>
             </div>
-            <div className="hidden rounded-l-lg bg-field-2 md:col-span-2 md:block" />
           </section>
         </main>
 
-        {/* ---------- Pie: el nombre, construido con bloques ---------- */}
-        <footer className="mt-2 rounded-lg bg-[#1c1c1c] p-4 text-[#e3e2da] md:p-8">
-          <div aria-hidden className="flex h-[26svh] min-h-[170px] items-end gap-1 md:h-[34svh]">
-            {LETTERS.map((l) => (
-              <div
-                key={l.ch}
-                className={`${l.bg} flex min-w-0 items-end justify-start overflow-hidden rounded-lg px-[1.4vw] pb-[0.16em] text-[min(24vw,30svh)] font-extrabold tracking-[-0.05em] ${l.bg.includes("text-") ? "" : "text-[#1c1c1c]"}`}
-                style={{ height: l.h, flexGrow: l.grow, flexBasis: 0 }}
-              >
-                <span className="block leading-[0.78]">{l.ch}</span>
+        {/* ---------- Pie ---------- */}
+        <footer className="mx-auto max-w-[1280px] px-6 pt-10 pb-12">
+          <div className="grid gap-12 md:grid-cols-2">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <Mark />
+                <span className="text-[22px] leading-none font-semibold tracking-[-0.02em]">Snip</span>
               </div>
-            ))}
-          </div>
-          <div className="mt-12 grid gap-12 md:grid-cols-12">
-            <ul className="grid content-start gap-3 md:col-span-5">
+              <p className="mt-4 max-w-[36ch] text-[18px] leading-[1.5] font-extralight text-mist">Enlaces cortos, QR y cada clic contado.</p>
+            </div>
+            <ul className={`${label} flex flex-wrap content-start gap-x-9 gap-y-4 text-ash md:justify-end`}>
               <li>
-                <DemoButton
-                  variant="ghost"
-                  size="lg"
-                  label="entra a la demo"
-                  className="!h-auto !gap-3 !rounded-none !bg-transparent !p-0 text-[28px] !font-bold tracking-[-0.03em] !text-field-2 hover:underline"
-                />
+                <Link href="/login" className="transition-colors hover:text-white">Entrar</Link>
               </li>
               <li>
-                <Link href="/register" className="text-[28px] font-bold tracking-[-0.03em] text-field-2 hover:underline">
-                  crea tu cuenta
-                </Link>
+                <Link href="/register" className="transition-colors hover:text-white">Crear cuenta</Link>
               </li>
               <li>
-                <a href="https://github.com/KrlosEng/snip" className="text-[28px] font-bold tracking-[-0.03em] text-field-2 hover:underline">
-                  el código en github
-                </a>
+                <DemoButton variant="ghost" size="md" label="Demo" className="!h-auto !gap-2 !p-0 !text-[14px] !font-semibold uppercase tracking-[0.025em] !text-ash hover:!bg-transparent hover:!text-white" />
+              </li>
+              <li>
+                <Link href="/privacy" className="transition-colors hover:text-white">Privacidad</Link>
+              </li>
+              <li>
+                <a href="https://github.com/KrlosEng/snip" className="transition-colors hover:text-white">GitHub</a>
               </li>
             </ul>
-            <div className="grid grid-cols-2 gap-8 text-[15px] md:col-span-7 md:grid-cols-3">
-              <ul className="grid content-start gap-2">
-                <li><Link href="/login" className="hover:underline">Iniciar sesión</Link></li>
-                <li><Link href="/register" className="hover:underline">Crear cuenta</Link></li>
-                <li><Link href="/privacy" className="hover:underline">Privacidad</Link></li>
-              </ul>
-              <ul className="grid content-start gap-2">
-                <li><a href="#tablero" className="hover:underline">Tablero</a></li>
-                <li><a href="#salidas" className="hover:underline">Qué te llevas</a></li>
-                <li><a href="#pasos" className="hover:underline">Cómo funciona</a></li>
-              </ul>
-              <p className="col-span-2 leading-relaxed break-words text-[#b9b8b1] md:col-span-1">
-                Fotos:{" "}
-                {CREDITS.map(([t, a, l, href], i) => (
-                  <span key={href}>
-                    <a href={href} className="underline underline-offset-2 hover:text-[#e3e2da]">{t}</a> de {a}, {l}
-                    {i < CREDITS.length - 1 ? "; " : "."}
-                  </span>
-                ))}
-              </p>
-            </div>
           </div>
-          <div className="mt-16 flex flex-wrap justify-between gap-4 text-[13px] text-[#b9b8b1]">
-            <p>Snip · acortador de enlaces con analíticas</p>
-            <a href="#titulo" className="hover:text-[#e3e2da]">volver arriba</a>
-          </div>
+          <p className="mt-16 text-[14px] text-ash">© 2026 Snip</p>
         </footer>
       </ShortenProvider>
     </div>

@@ -95,7 +95,7 @@ export function OtpForm({ email }: { email: string }) {
         <span className="mb-5 grid size-12 place-items-center rounded-xl bg-brand-soft text-brand">
           <MailCheck className="size-6" aria-hidden />
         </span>
-        <h1 className="text-[2rem] leading-tight font-bold">Confirma que eres tú</h1>
+        <h1 className="text-[2.5rem] leading-[1.05] font-normal tracking-[-0.04em]">Confirma que eres tú</h1>
         <p className="mt-2 text-ink-2">
           Entraste desde un dispositivo nuevo. Te enviamos un código de 6 dígitos a{" "}
           <span className="font-medium text-ink">{email || "tu correo"}</span>.

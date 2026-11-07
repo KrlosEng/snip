@@ -47,9 +47,9 @@ const variants: Record<Variant, string> = {
   danger: "bg-danger text-brand-ink hover:brightness-95 dark:text-[oklch(0.18_0.03_25)]",
 };
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-lg",
-  md: "h-9 px-4 text-sm gap-2 rounded-lg",
-  lg: "h-11 px-5 text-[15px] gap-2 rounded-[10px]",
+  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-full",
+  md: "h-9 px-4 text-sm gap-2 rounded-full",
+  lg: "h-11 px-6 text-[15px] gap-2 rounded-full",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
