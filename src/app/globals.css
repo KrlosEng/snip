@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------
+   Snip · "Corte limpio"
+   Papel cálido, tinta azul-negra y un bermellón de corte como único
+   acento. Precisión de imprenta: marcas de corte, perforaciones de
+   boleto y sombras planas de tinta en vez de sombras difusas.
+------------------------------------------------------------------- */
+:root {
+  --bg: oklch(0.968 0.011 80);
+  --surface: oklch(0.992 0.005 80);
+  --surface-2: oklch(0.948 0.013 80);
+  --line: oklch(0.885 0.015 75);
+  --line-strong: oklch(0.79 0.018 75);
+  --ink: oklch(0.21 0.022 258);
+  --ink-2: oklch(0.42 0.02 258);
+  --ink-3: oklch(0.54 0.018 258);
+  --brand: oklch(0.575 0.205 33);
+  --brand-strong: oklch(0.5 0.19 31);
+  --brand-soft: oklch(0.935 0.042 42);
+  --brand-ink: oklch(0.99 0.006 80);
+  --ring: oklch(0.575 0.205 33 / 0.22);
+  --success: oklch(0.55 0.13 160);
+  --success-soft: oklch(0.94 0.04 160);
+  --danger: oklch(0.55 0.2 25);
+  --danger-soft: oklch(0.95 0.03 25);
+  --warn: oklch(0.6 0.14 70);
+  --warn-soft: oklch(0.95 0.05 85);
+  --violet: oklch(0.5 0.09 235);
+  --chart-2: oklch(0.36 0.04 258);
+  --chart-3: oklch(0.8 0.14 85);
+
+  --shadow-1: 0 1px 0 0 oklch(0.21 0.022 258 / 0.06);
+  --shadow-2: 0 1px 0 0 oklch(0.21 0.022 258 / 0.08), 0 10px 24px -14px oklch(0.21 0.022 258 / 0.28);
+  --shadow-3: 0 2px 0 0 oklch(0.21 0.022 258 / 0.1), 0 28px 50px -18px oklch(0.21 0.022 258 / 0.38);
+  --stamp: 3px 3px 0 0 var(--ink);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: oklch(0.165 0.013 258);
+  --surface: oklch(0.205 0.015 258);
+  --surface-2: oklch(0.24 0.016 258);
+  --line: oklch(0.295 0.016 258);
+  --line-strong: oklch(0.38 0.018 258);
+  --ink: oklch(0.95 0.01 80);
+  --ink-2: oklch(0.79 0.014 80);
+  --ink-3: oklch(0.65 0.014 80);
+  --brand: oklch(0.69 0.18 36);
+  --brand-strong: oklch(0.76 0.15 40);
+  --brand-soft: oklch(0.3 0.07 33);
+  --brand-ink: oklch(0.16 0.02 258);
+  --ring: oklch(0.69 0.18 36 / 0.3);
+  --success: oklch(0.74 0.14 160);
+  --success-soft: oklch(0.3 0.05 160);
+  --danger: oklch(0.7 0.17 25);
+  --danger-soft: oklch(0.3 0.06 25);
+  --warn: oklch(0.8 0.13 75);
+  --warn-soft: oklch(0.32 0.05 75);
+  --violet: oklch(0.72 0.09 235);
+  --chart-2: oklch(0.82 0.02 80);
+  --chart-3: oklch(0.82 0.13 85);
+  --shadow-1: 0 1px 0 0 oklch(0 0 0 / 0.3);
+  --shadow-2: 0 1px 0 0 oklch(0 0 0 / 0.3), 0 12px 28px -14px oklch(0 0 0 / 0.6);
+  --shadow-3: 0 2px 0 0 oklch(0 0 0 / 0.35), 0 30px 60px -18px oklch(0 0 0 / 0.7);
+  --stamp: 3px 3px 0 0 oklch(0.05 0.01 258);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-violet: var(--violet);
+
+  --font-display: var(--font-funnel), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-host), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-stamp: var(--stamp);
+
+  --ease-out: var(--ease-out);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    letter-spacing: -0.006em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  ::selection {
+    background: var(--brand-soft);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Perforación tipo "talón de boleto": el motivo de marca de Snip. */
+@utility perforation {
+  background-image: radial-gradient(circle at 6px 50%, var(--bg) 5px, transparent 5.5px),
+    radial-gradient(circle at calc(100% - 6px) 50%, var(--bg) 5px, transparent 5.5px);
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.pulse-dot { position: relative; }
+.pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: pulse-ring 1.8s var(--ease-out) infinite;
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.35), transparent);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+[data-theme="dark"] .skeleton::after {
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.05), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot::after, .skeleton::after { animation: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
+
+/* Recharts: quitar el contorno de foco en el SVG */
+.recharts-wrapper *:focus { outline: none; }
+
+/* ---------------------- Motivos de marca ---------------------- */
+
+/* Marcas de corte de imprenta en las esquinas (fuera de la caja). */
+.crop { position: relative; }
+.crop::before {
+  content: "";
+  position: absolute;
+  inset: -11px;
+  pointer-events: none;
+  --c: var(--line-strong);
+  background:
+    linear-gradient(var(--c), var(--c)) 0 10px / 7px 1px,
+    linear-gradient(var(--c), var(--c)) 10px 0 / 1px 7px,
+    linear-gradient(var(--c), var(--c)) 100% 10px / 7px 1px,
+    linear-gradient(var(--c), var(--c)) calc(100% - 10px) 0 / 1px 7px,
+    linear-gradient(var(--c), var(--c)) 0 calc(100% - 10px) / 7px 1px,
+    linear-gradient(var(--c), var(--c)) 10px 100% / 1px 7px,
+    linear-gradient(var(--c), var(--c)) 100% calc(100% - 10px) / 7px 1px,
+    linear-gradient(var(--c), var(--c)) calc(100% - 10px) 100% / 1px 7px;
+  background-repeat: no-repeat;
+}
+
+/* Borde dentado de recibo/boleto arriba y abajo. */
+.receipt {
+  --r: 5px;
+  --gap: 14px;
+  mask:
+    radial-gradient(circle var(--r) at 50% 0, #0000 97%, #000) 0 0 / var(--gap) 51% repeat-x,
+    radial-gradient(circle var(--r) at 50% 100%, #0000 97%, #000) 0 100% / var(--gap) 51% repeat-x;
+}
+
+/* Botón "sello": sombra plana de tinta que se hunde al presionar. */
+.stamp {
+  box-shadow: var(--stamp);
+  transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out), background-color 0.15s;
+}
+.stamp:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 var(--ink); }
+[data-theme="dark"] .stamp:hover:not(:disabled) { box-shadow: 4px 4px 0 0 oklch(0.05 0.01 258); }
+.stamp:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 var(--ink); }
+
+/* Línea de corte punteada horizontal. */
+.cutline {
+  background-image: linear-gradient(90deg, var(--line-strong) 55%, transparent 0);
+  background-size: 9px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+}
