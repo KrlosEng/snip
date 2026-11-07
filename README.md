@@ -43,6 +43,125 @@ Requiere **Node 22.5+**. Sin `DATABASE_URL` usa SQLite embebido (`node:sqlite`),
 | GET | `/api/links/:id/export` | CSV de clics |
 | GET | `/api/dashboard` | KPIs y serie de 30 días |
 
+## Estructura del proyecto
+
+Es una sola app de **Next.js (App Router)**: el frontend, la API y la redirección de los enlaces cortos viven en el mismo proyecto. Todo el código está en `src/`, dividido en tres carpetas con responsabilidades claras:
+
+| Carpeta | Qué contiene | Dónde corre |
+|---|---|---|
+| `src/app/` | Las **rutas**: páginas, endpoints de la API y la redirección `/[slug]` | Servidor (y cliente en las vistas) |
+| `src/components/` | **Piezas de interfaz** reutilizables (botones, gráficos, QR, animaciones) | Navegador |
+| `src/lib/` | La **lógica**: base de datos, sesiones, enlaces, analíticas, correo, OAuth | Solo servidor |
+
+```text
+snip/
+├── src/
+│   ├── app/                          ← Rutas (cada carpeta es una URL)
+│   │   ├── layout.tsx                ← Plantilla raíz: fuentes, tema claro/oscuro, avisos
+│   │   ├── globals.css               ← Colores (OKLCH), tipografía y motivos de marca
+│   │   ├── page.tsx                  ← Landing "/" con el acortador sin cuenta
+│   │   ├── login/ · register/        ← Inicio de sesión y registro
+│   │   │   └── verify/               ← Pantalla del código de 6 dígitos
+│   │   ├── privacy/                  ← Página de privacidad
+│   │   ├── not-found.tsx             ← 404 de la app
+│   │   │
+│   │   ├── (app)/                    ← Zona privada (exige sesión); el paréntesis no aparece en la URL
+│   │   │   ├── layout.tsx            ← Comprueba la sesión y dibuja el menú lateral
+│   │   │   ├── dashboard/            ← "/dashboard": KPIs, gráfico de 30 días, últimos enlaces
+│   │   │   ├── links/                ← "/links": lista con búsqueda, filtros y paginación
+│   │   │   │   └── [id]/             ← "/links/123": detalle y analíticas de un enlace
+│   │   │   └── settings/             ← "/settings": perfil, tema, borrar cuenta
+│   │   │
+│   │   ├── [slug]/                   ← "/launch-v2": la redirección (el corazón del producto)
+│   │   │   ├── route.ts              ← Caché → base de datos → 302 → registra el clic
+│   │   │   └── unavailable.ts        ← Página HTML de enlace vencido (410) o inexistente (404)
+│   │   │
+│   │   └── api/                      ← API REST (responde JSON)
+│   │       ├── auth/                 ← login, register, logout, demo, verify, [provider] (OAuth)
+│   │       ├── links/                ← CRUD de enlaces + [id]/stats, clicks, qr, export
+│   │       ├── dashboard/            ← KPIs del panel
+│   │       └── me/                   ← Perfil del usuario y borrado de cuenta
+│   │
+│   ├── components/                   ← Interfaz reutilizable ("use client")
+│   │   ├── ui.tsx                    ← Botón, campo, switch, insignia de estado, logo
+│   │   ├── motion.tsx                ← Animaciones: entrada escalonada, contador, botón copiar
+│   │   ├── app-shell.tsx             ← Menú lateral, barra superior y navegación móvil
+│   │   ├── shortener.tsx             ← Barra para acortar de la landing
+│   │   ├── snip-strip.tsx            ← Animación del enlace que se corta (hero)
+│   │   ├── snip-ticket.tsx           ← Resultado tipo boleto con el QR
+│   │   ├── link-modal.tsx            ← Ventana para crear y editar enlaces (atajo C)
+│   │   ├── charts.tsx                ← Gráfico de clics, dona y barras (Recharts)
+│   │   ├── qr.tsx                    ← Vista previa y descarga del QR
+│   │   ├── auth-form.tsx · otp-form.tsx ← Formularios de acceso y del código
+│   │   └── …                         ← Avisos (providers), feed de ejemplo, tema, etc.
+│   │
+│   └── lib/                          ← Lógica de servidor ("server-only")
+│       ├── db.ts                     ← Conexión y esquema: Postgres (Neon) o SQLite local
+│       ├── auth.ts                   ← Sesiones con cookie y usuario actual
+│       ├── verify.ts                 ← Dispositivos de confianza y códigos por correo
+│       ├── oauth.ts                  ← Google, GitHub y Apple
+│       ├── mailer.ts                 ← Envío de correos (Resend o SMTP/Gmail)
+│       ├── links.ts                  ← Crear, listar, editar y borrar enlaces
+│       ├── clicks.ts                 ← Registro de clics, detección de bots y estadísticas
+│       ├── cache.ts                  ← Caché de slugs y límite de uso (Redis o memoria)
+│       ├── validation.ts             ← Reglas de URLs y alias (Zod)
+│       ├── ids.ts                    ← Slugs base62, hashes y contraseñas (scrypt)
+│       ├── seed.ts                   ← Datos de la cuenta demo
+│       ├── http.ts · format.ts       ← Utilidades de respuestas, números y fechas
+│
+├── scripts/                          ← Asistentes para configurar Gmail y OAuth en Vercel
+├── .env.example                      ← Variables de entorno disponibles (todas opcionales)
+└── next.config.ts · tsconfig.json · eslint.config.mjs · package.json
+```
+
+### Convenciones de Next.js que conviene conocer
+
+- **Una carpeta = una URL.** `src/app/links/page.tsx` es la página `/links`.
+- **`page.tsx`** es una página; **`route.ts`** es un endpoint de la API (exporta `GET`, `POST`, `PATCH`, `DELETE`); **`layout.tsx`** envuelve a todas las páginas de su carpeta.
+- **`[id]` y `[slug]`** son partes variables de la URL: `/links/abc123` llega con `id = "abc123"`.
+- **`(app)`** es un grupo: agrupa rutas que comparten el mismo layout sin cambiar la URL.
+
+### Patrón `page.tsx` + `view.tsx`
+
+Cada pantalla privada está partida en dos archivos:
+
+- **`page.tsx`** (servidor): comprueba la sesión, consulta la base de datos y pasa los datos ya listos.
+- **`view.tsx`** (cliente, `"use client"`): dibuja la interfaz, maneja clics, animaciones y llamadas a la API.
+
+Así las consultas nunca llegan al navegador y la página carga con los datos ya puestos.
+
+### Cómo viaja un clic
+
+```text
+Visitante abre snip-acortador.vercel.app/launch-v2
+        │
+        ▼
+src/app/[slug]/route.ts
+        │  1. Busca el slug en la caché (lib/cache.ts)
+        │  2. Si no está, lo busca en Postgres (lib/db.ts) y lo guarda en caché
+        │  3. ¿Vencido o pausado? → página 410 (unavailable.ts)
+        │  4. Responde 302 al destino de inmediato
+        ▼
+after(): ya con el visitante en camino
+        │  lib/clicks.ts → país y ciudad (cabeceras de Vercel), dispositivo y navegador
+        │  (ua-parser-js), dominio de origen, hash de la IP y marca de bot
+        ▼
+Tabla clicks  →  la leen /api/links/[id]/stats y el panel
+```
+
+### ¿Dónde cambio…?
+
+| Si quieres cambiar… | Ve a |
+|---|---|
+| Colores, tipografía o el tema oscuro | `src/app/globals.css` |
+| Textos de la landing | `src/app/page.tsx` |
+| Una pantalla del panel | `src/app/(app)/<pantalla>/view.tsx` |
+| Qué alias están prohibidos o cómo se valida una URL | `src/lib/validation.ts` |
+| Cómo se cuentan los clics o qué es un bot | `src/lib/clicks.ts` |
+| Las tablas de la base de datos | `src/lib/db.ts` |
+| El correo con el código | `src/lib/mailer.ts` |
+| Los datos de la cuenta demo | `src/lib/seed.ts` |
+
 ## Decisiones técnicas
 
 - **302 y no 301**: con 301 el navegador guarda la redirección y las siguientes visitas ya no pasan por Snip, así que no se contarían.
