@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { motion } from "motion/react";
 import { EASE } from "./motion";
@@ -11,18 +10,11 @@ import { cx } from "./ui";
 type Point = { date: string; clicks: number };
 
 export function ClicksChart({ data, height = 260 }: { data: Point[]; height?: number }) {
-  const id = useId().replace(/:/g, "");
   const every = data.length > 45 ? 14 : data.length > 20 ? 6 : 1;
   return (
     <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 4, left: -6, bottom: 0 }}>
-          <defs>
-            <linearGradient id={`fill-${id}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.22} />
-              <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
-            </linearGradient>
-          </defs>
           <CartesianGrid vertical={false} stroke="var(--line)" strokeDasharray="3 4" />
           <XAxis
             dataKey="date"
@@ -50,12 +42,13 @@ export function ClicksChart({ data, height = 260 }: { data: Point[]; height?: nu
             }}
           />
           <Area
-            type="monotone"
+            type="linear"
             dataKey="clicks"
-            stroke="var(--brand)"
+            stroke="var(--chart)"
             strokeWidth={2}
-            fill={`url(#fill-${id})`}
-            activeDot={{ r: 4.5, strokeWidth: 2, stroke: "var(--surface)", fill: "var(--brand)" }}
+            fill="var(--chart)"
+            fillOpacity={0.1}
+            activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)", fill: "var(--chart)" }}
             animationDuration={900}
             animationEasing="ease-out"
           />
@@ -65,7 +58,7 @@ export function ClicksChart({ data, height = 260 }: { data: Point[]; height?: nu
   );
 }
 
-const DONUT = ["var(--brand)", "var(--chart-2)", "var(--chart-3)", "var(--violet)", "var(--ink-3)"];
+const DONUT = ["var(--chart)", "var(--chart-2)", "var(--chart-3)", "var(--ink-3)", "var(--line-strong)"];
 
 export function Donut({ data, label }: { data: { label: string; value: number }[]; label: string }) {
   const total = data.reduce((s, d) => s + d.value, 0);
@@ -76,7 +69,7 @@ export function Donut({ data, label }: { data: { label: string; value: number }[
       <div className="relative size-[132px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={data} dataKey="value" nameKey="label" innerRadius={46} outerRadius={64} paddingAngle={2} stroke="none" animationDuration={800} startAngle={90} endAngle={-270}>
+            <Pie data={data} dataKey="value" nameKey="label" innerRadius={56} outerRadius={64} paddingAngle={1.5} stroke="none" animationDuration={800} startAngle={90} endAngle={-270}>
               {data.map((_, i) => (
                 <Cell key={i} fill={DONUT[i % DONUT.length]} />
               ))}
@@ -116,7 +109,7 @@ export function BarList({
   const total = data.reduce((s, d) => s + d.value, 0);
   const max = Math.max(1, ...data.map((d) => d.value));
   if (!total) return <Empty />;
-  const bar = tone === "violet" ? "bg-violet/15" : tone === "success" ? "bg-success/15" : "bg-brand/12";
+  const bar = tone === "violet" ? "bg-chart-2/40" : tone === "success" ? "bg-chart-3/50" : "bg-chart/15";
   return (
     <ul className="grid gap-1.5">
       {data.map((d, i) => (

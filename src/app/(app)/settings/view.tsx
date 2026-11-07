@@ -51,11 +51,11 @@ export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: 
   return (
     <Stagger className="grid max-w-3xl gap-6">
       <Item as="header">
-        <h1 className="text-[2.2rem] leading-none font-bold tracking-[-0.045em] sm:text-[2.8rem]">Configuración</h1>
+        <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">Configuración</h1>
         <p className="mt-1 text-ink-2">Tu perfil, cómo se ve Snip y tu cuenta.</p>
       </Item>
 
-      <Item as="section" className="rounded-2xl border border-line bg-surface shadow-1">
+      <Item as="section" className="rounded-xl border border-line bg-surface">
         <form onSubmit={save}>
           <div className="border-b border-line px-5 py-4 sm:px-6">
             <h2 className="text-base font-semibold">Perfil</h2>
@@ -101,7 +101,7 @@ export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: 
         </form>
       </Item>
 
-      <Item as="section" className="rounded-2xl border border-line bg-surface shadow-1">
+      <Item as="section" className="rounded-xl border border-line bg-surface">
         <div className="border-b border-line px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold">Apariencia</h2>
         </div>
@@ -110,7 +110,7 @@ export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: 
         </div>
       </Item>
 
-      <Item as="section" className="rounded-2xl border border-danger/30 bg-surface shadow-1">
+      <Item as="section" className="rounded-xl border border-danger/30 bg-surface">
         <div className="border-b border-danger/20 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold text-danger">Borrar cuenta</h2>
         </div>

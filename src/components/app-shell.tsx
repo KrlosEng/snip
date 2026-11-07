@@ -68,13 +68,13 @@ function Sidebar({ user }: { user: ShellUser }) {
               aria-current={active ? "page" : undefined}
               className={cx(
                 "relative flex h-10 items-center gap-3 rounded-lg px-3 text-[14px] font-medium transition-colors",
-                active ? "text-brand" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
+                active ? "text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
               )}
             >
               {active && (
                 <motion.span
                   layoutId="nav-active"
-                  className="absolute inset-0 rounded-lg bg-brand-soft"
+                  className="absolute inset-0 rounded-lg bg-surface-2"
                   transition={{ type: "spring", stiffness: 520, damping: 46 }}
                 />
               )}
@@ -87,7 +87,7 @@ function Sidebar({ user }: { user: ShellUser }) {
 
       <div className="mt-auto">
         <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-line bg-bg/60 p-2">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-soft font-display text-sm font-bold text-brand">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-field-2 text-sm font-bold text-field-ink">
             {user.name.trim().charAt(0).toUpperCase() || "S"}
           </span>
           <div className="min-w-0 flex-1">
@@ -184,9 +184,9 @@ function BottomNav() {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={cx("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-brand" : "text-ink-3")}
+            className={cx("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors", active ? "text-ink" : "text-ink-3")}
           >
-            {active && <motion.span layoutId="bottom-active" className="absolute top-0 h-0.5 w-10 rounded-full bg-brand" transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} />}
+            {active && <motion.span layoutId="bottom-active" className="absolute top-0 h-0.5 w-10 rounded-full bg-ink" transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} />}
             <Icon className="size-5" aria-hidden />
             {label}
           </Link>

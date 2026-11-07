@@ -26,25 +26,25 @@ export function DashboardView({ name, stats, links, origin }: { name: string; st
     <Stagger className="grid gap-6">
       <Item as="header" className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] tracking-[0.14em] text-ink-3 uppercase">
-            <Today /> · últimos 30 días
+          <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">Panel</h1>
+          <p className="mt-1 text-[14px] text-ink-3">
+            Hola, {first} · <Today /> · últimos 30 días
           </p>
-          <h1 className="mt-2 text-[2.2rem] leading-none font-bold tracking-[-0.045em] sm:text-[2.8rem]">Hola, {first}.</h1>
         </div>
       </Item>
 
       <Item>
-        <dl className="receipt grid grid-cols-2 bg-surface py-2 lg:grid-cols-4">
-          <Kpi label="Enlaces" className="border-r border-b border-dashed border-line-strong lg:border-b-0">
+        <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-surface lg:grid-cols-4">
+          <Kpi label="Enlaces" className="border-r border-b border-line lg:border-b-0">
             <CountUp value={stats.links} />
             <Sub>{fmt(stats.active)} activos</Sub>
           </Kpi>
-          <Kpi label="Clics totales" className="border-b border-dashed border-line-strong lg:border-r lg:border-b-0">
+          <Kpi label="Clics totales" className="border-b border-line lg:border-r lg:border-b-0">
             <CountUp value={stats.total} />
             <Sub>{fmt(stats.last30)} en 30 días</Sub>
           </Kpi>
-          <Kpi label="Clics de hoy" className="border-r border-dashed border-line-strong">
-            <CountUp value={stats.today} className="text-brand" />
+          <Kpi label="Clics de hoy" className="border-r border-line">
+            <CountUp value={stats.today} />
             <Sub>
               <span
                 className={cx(
@@ -76,21 +76,21 @@ export function DashboardView({ name, stats, links, origin }: { name: string; st
         </dl>
       </Item>
 
-      <Item className="rounded-2xl border border-line bg-surface p-5 shadow-1 sm:p-6">
+      <Item className="rounded-xl border border-line bg-surface p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <h2 className="font-mono text-[11px] font-normal tracking-[0.12em] text-ink-3 uppercase">Clics por día</h2>
-            <p className="mt-2 font-display text-[1.6rem] leading-none font-bold tracking-tight tnum">
-              {fmt(stats.last30)} <span className="font-sans text-sm font-normal tracking-normal text-ink-3">en 30 días</span>
+            <h2 className="text-[16px] font-semibold">Clics por día</h2>
+            <p className="mt-1 text-[14px] text-ink-3 tnum">
+              <span className="font-semibold text-ink">{fmt(stats.last30)}</span> en 30 días, sin bots
             </p>
           </div>
         </div>
         <ClicksChart data={stats.series} height={280} />
       </Item>
 
-      <Item className="overflow-hidden rounded-2xl border border-line bg-surface shadow-1">
+      <Item className="overflow-hidden rounded-xl border border-line bg-surface">
         <div className="flex items-center justify-between border-b border-line px-5 py-4 sm:px-6">
-          <h2 className="font-mono text-[11px] font-normal tracking-[0.12em] text-ink-3 uppercase">Últimos enlaces</h2>
+          <h2 className="text-[16px] font-semibold">Últimos enlaces</h2>
           <Link href="/links" className="group inline-flex items-center gap-1 text-sm font-semibold text-brand">
             Ver todos <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
           </Link>
@@ -104,7 +104,6 @@ export function DashboardView({ name, stats, links, origin }: { name: string; st
               transition={{ duration: 0.4, ease: EASE, delay: 0.25 + i * 0.04 }}
               className="group relative flex items-center gap-4 border-b border-line px-5 py-3.5 transition-colors last:border-b-0 hover:bg-surface-2/60 sm:px-6"
             >
-              <span className="hidden w-8 font-mono text-xs text-ink-3 tnum sm:block">{String(i + 1).padStart(2, "0")}</span>
               <div className="min-w-0 flex-1">
                 <Link href={`/links/${l.id}`} className="block truncate font-mono text-sm font-medium after:absolute after:inset-0">
                   <span className="text-ink-3">{host}/</span>
@@ -132,8 +131,8 @@ export function DashboardView({ name, stats, links, origin }: { name: string; st
 function Kpi({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cx("min-w-0 px-4 py-5 sm:px-6", className)}>
-      <dt className="font-mono text-[11px] tracking-[0.12em] text-ink-3 uppercase">{label}</dt>
-      <dd className="mt-3 grid gap-2 font-display text-[2.1rem] leading-none font-bold tracking-[-0.04em] sm:text-[2.4rem]">{children}</dd>
+      <dt className="text-[13px] text-ink-3">{label}</dt>
+      <dd className="mt-2 grid gap-1.5 text-[30px] leading-none font-semibold tracking-[-0.02em]">{children}</dd>
     </div>
   );
 }
@@ -158,10 +157,6 @@ function EmptyDashboard({ first, host, onCreate }: { first: string; host: string
   return (
     <Stagger className="grid gap-8">
       <Item className="relative overflow-hidden rounded-3xl border border-line bg-surface px-6 py-14 text-center shadow-1 sm:px-10 sm:py-20">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-60 [background-image:radial-gradient(var(--line-strong)_1px,transparent_1px)] [background-size:20px_20px] [mask-image:radial-gradient(closest-side,black,transparent)]"
-        />
         <div className="relative mx-auto mb-8 grid size-28 place-items-center" aria-hidden>
           <motion.span
             className="absolute inset-0 rounded-full border border-dashed border-brand/40"
@@ -177,7 +172,7 @@ function EmptyDashboard({ first, host, onCreate }: { first: string; host: string
             initial={{ scale: 0.6, opacity: 0, rotate: -20 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ duration: 0.7, ease: EASE, delay: 0.2 }}
-            className="grid size-14 place-items-center rounded-2xl bg-brand text-brand-ink shadow-2"
+            className="grid size-14 place-items-center rounded-2xl bg-brand text-brand-ink"
           >
             <Scissors className="size-6" />
           </motion.span>
@@ -188,7 +183,7 @@ function EmptyDashboard({ first, host, onCreate }: { first: string; host: string
         </p>
         <button
           onClick={onCreate}
-          className="relative mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-brand px-6 text-[15px] font-semibold text-brand-ink shadow-2 transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97]"
+          className="relative mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-brand px-6 text-[15px] font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97]"
         >
           <Plus className="size-4" aria-hidden /> Crear mi primer enlace
         </button>
@@ -203,7 +198,7 @@ function EmptyDashboard({ first, host, onCreate }: { first: string; host: string
           {steps.map((s, i) => (
             <li key={s.title} className="flex flex-col rounded-2xl border border-line bg-surface p-5">
               <div className="flex items-center justify-between">
-                <span className="grid size-9 place-items-center rounded-lg bg-brand-soft text-brand">
+                <span className="grid size-9 place-items-center text-ink-3">
                   <s.icon className="size-[18px]" aria-hidden />
                 </span>
                 <span className="font-mono text-xs text-ink-3">Paso {i + 1}</span>

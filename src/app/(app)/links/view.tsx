@@ -125,7 +125,7 @@ export function LinksView({
     return (
       <Stagger className="grid gap-6">
         <Item as="header">
-          <h1 className="text-[1.75rem] font-bold sm:text-[2rem]">Mis enlaces</h1>
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em]">Mis enlaces</h1>
         </Item>
         <Item className="grid place-items-center rounded-3xl border border-dashed border-line-strong px-6 py-20 text-center">
           <p className="font-display text-xl font-semibold">Aún no tienes enlaces</p>
@@ -142,7 +142,7 @@ export function LinksView({
     <Stagger className="grid gap-5">
       <Item as="header" className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[2.2rem] leading-none font-bold tracking-[-0.045em] sm:text-[2.8rem]">Mis enlaces</h1>
+          <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">Mis enlaces</h1>
           <p className="mt-1 text-ink-2">
             <span className="tnum">{fmt(data.total)}</span> {data.total === 1 ? "enlace" : "enlaces"}
             {q && (
@@ -207,7 +207,7 @@ export function LinksView({
         </div>
       </Item>
 
-      <Item className={cx("overflow-hidden rounded-2xl border border-line bg-surface shadow-1 transition-opacity duration-200", pending && "opacity-60")}>
+      <Item className={cx("overflow-hidden rounded-xl border border-line bg-surface transition-opacity duration-200", pending && "opacity-60")}>
         {items.length === 0 ? (
           <div className="grid place-items-center px-6 py-16 text-center">
             <SearchX className="size-8 text-ink-3" aria-hidden />
@@ -219,7 +219,7 @@ export function LinksView({
           </div>
         ) : (
           <>
-            <div className="hidden grid-cols-[minmax(0,1fr)_96px_88px_72px_136px] gap-4 border-b border-line bg-surface-2/70 px-5 py-2.5 text-[11px] font-semibold tracking-[0.06em] text-ink-3 uppercase md:grid">
+            <div className="hidden grid-cols-[minmax(0,1fr)_96px_88px_72px_136px] gap-4 border-b border-line px-5 py-2.5 text-[12px] text-ink-3 md:grid">
               <span>Enlace</span>
               <span>Estado</span>
               <span className="text-right">Clics</span>
@@ -238,7 +238,6 @@ export function LinksView({
                     className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3.5 transition-colors last:border-b-0 hover:bg-surface-2/50 md:grid-cols-[minmax(0,1fr)_96px_88px_72px_136px] md:px-5"
                   >
                     <div className="min-w-0">
-                      <span className="mb-0.5 block font-mono text-[10px] tracking-[0.12em] text-ink-3">Nº {String((data.page - 1) * data.pageSize + i + 1).padStart(3, "0")}</span>
                       <Link href={`/links/${l.id}`} className="block truncate font-mono text-[14px] font-medium hover:text-brand">
                         <span className="text-ink-3">{host}/</span>
                         {l.slug}
@@ -328,7 +327,7 @@ function pageList(cur: number, total: number): (number | "…")[] {
 function IconBtn({ children, label, onClick, href, danger }: { children: React.ReactNode; label: string; onClick?: () => void; href?: string; danger?: boolean }) {
   const cls = cx(
     "grid size-8 place-items-center rounded-lg text-ink-3 transition-[background-color,color,transform] active:scale-[0.92]",
-    danger ? "hover:bg-danger-soft hover:text-danger" : "hover:bg-brand-soft hover:text-brand",
+    danger ? "hover:bg-danger-soft hover:text-danger" : "hover:bg-surface-2 hover:text-ink",
   );
   if (href)
     return (
@@ -352,7 +351,7 @@ function PageBtn({ children, onClick, disabled, active, label }: { children: Rea
       aria-current={active ? "page" : undefined}
       className={cx(
         "grid size-9 place-items-center rounded-lg text-sm font-medium tnum transition-[background-color,color,transform] active:scale-[0.94] disabled:opacity-40",
-        active ? "bg-brand text-brand-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
+        active ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
       )}
     >
       {children}

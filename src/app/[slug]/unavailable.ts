@@ -51,27 +51,26 @@ export function unavailablePage(p: { origin: string; slug: string; status: 404 |
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>${esc(c.badge)} · Snip</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@500;700&family=Host+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=pilcrow-rounded@400,500,700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:oklch(0.968 0.011 80);--surface:oklch(0.992 0.005 80);--line:oklch(0.885 0.015 75);
-  --ink:oklch(0.21 0.022 258);--ink-2:oklch(0.42 0.02 258);--ink-3:oklch(0.54 0.018 258);
-  --brand:oklch(0.575 0.205 33);--brand-strong:oklch(0.5 0.19 31);--brand-ink:oklch(0.99 0.006 80);
-  --danger:oklch(0.55 0.2 25);--danger-soft:oklch(0.95 0.03 25);--stamp:oklch(0.21 0.022 258);
+  --bg:#a6b3bc;--surface:#eef0ef;--line:#8e9ba4;
+  --ink:#1c1c1c;--ink-2:#2c343a;--ink-3:#38424a;
+  --brand:#2c3620;--brand-strong:#1e2516;--brand-ink:#e3e2da;
+  --danger:#8a3a26;--danger-soft:#f3dfd9;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:oklch(0.165 0.013 258);--surface:oklch(0.205 0.015 258);--line:oklch(0.295 0.016 258);
-  --ink:oklch(0.95 0.01 80);--ink-2:oklch(0.79 0.014 80);--ink-3:oklch(0.65 0.014 80);
-  --brand:oklch(0.69 0.18 36);--brand-strong:oklch(0.76 0.15 40);--brand-ink:oklch(0.16 0.02 258);
-  --danger:oklch(0.7 0.17 25);--danger-soft:oklch(0.3 0.06 25);--stamp:oklch(0.05 0.01 258);
+  --bg:#141414;--surface:#1b1b1b;--line:#2c2c2c;
+  --ink:#e9e8e2;--ink-2:#bdbcb5;--ink-3:#94938c;
+  --brand:#b7c8be;--brand-strong:#cad8cf;--brand-ink:#161a17;
+  --danger:#e0a08f;--danger-soft:#3a2420;
 }}
 *{box-sizing:border-box;margin:0}
-body{min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:400 15px/1.55 "Host Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:400 15px/1.55 "Pilcrow Rounded",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit}
 header{padding:28px 24px;display:flex;justify-content:center}
-.logo{display:inline-flex;align-items:center;gap:8px;font:700 20px/1 "Funnel Display",system-ui;letter-spacing:-.03em;text-decoration:none}
+.logo{display:inline-flex;align-items:center;gap:8px;font:700 20px/1 "Pilcrow Rounded",system-ui;letter-spacing:-.03em;text-decoration:none}
 .logo svg{width:26px;height:26px}
 main{flex:1;display:grid;place-items:center;padding:24px 20px 48px}
 .wrap{width:100%;max-width:520px}
@@ -87,21 +86,21 @@ main{flex:1;display:grid;place-items:center;padding:24px 20px 48px}
 .rise{animation:rise .7s cubic-bezier(.16,1,.3,1) both}
 .d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.badge{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;background:var(--danger-soft);color:var(--danger);font:500 12px/1.4 "JetBrains Mono",monospace}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;background:var(--danger-soft);color:var(--danger);font:500 13px/1.4 "Pilcrow Rounded",system-ui}
 .badge i{width:6px;height:6px;border-radius:50%;background:currentColor}
-h1{margin:16px 0 10px;font:700 clamp(28px,6vw,40px)/1.08 "Funnel Display",system-ui;letter-spacing:-.035em;text-wrap:balance}
+h1{margin:16px 0 10px;font:700 clamp(28px,6vw,40px)/1.08 "Pilcrow Rounded",system-ui;letter-spacing:-.035em;text-wrap:balance}
 p.lead{color:var(--ink-2);max-width:46ch;text-wrap:pretty}
 .ticket{margin:28px 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.ticket-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px dashed var(--line);font-size:13px;color:var(--ink-2)}
-.code{font:500 12px/1 "JetBrains Mono",monospace;color:var(--danger)}
+.ticket-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.code{font:500 13px/1 "Pilcrow Rounded",system-ui;color:var(--danger)}
 .ticket-body{padding:16px;display:grid;gap:14px}
 .k{font-size:12px;color:var(--ink-3);margin-bottom:4px}
-.slug{font:500 15px/1.4 "JetBrains Mono",monospace;word-break:break-all}
+.slug{font:500 16px/1.4 "Pilcrow Rounded",system-ui;word-break:break-all}
 .slug b{font-weight:500;color:var(--ink-3)}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:10px;font:600 14px/1 "Host Grotesk",system-ui;text-decoration:none;transition:transform .15s cubic-bezier(.16,1,.3,1),background-color .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:10px;font:600 14px/1 "Pilcrow Rounded",system-ui;text-decoration:none;transition:transform .15s cubic-bezier(.16,1,.3,1),background-color .15s}
 .btn:active{transform:scale(.97)}
-.primary{background:var(--brand);color:var(--brand-ink);box-shadow:3px 3px 0 var(--stamp)}
+.primary{background:var(--brand);color:var(--brand-ink)}
 .primary:hover{background:var(--brand-strong)}
 .ghost{border:1px solid var(--line);background:var(--surface)}
 .ghost:hover{border-color:var(--ink-3)}
@@ -141,4 +140,4 @@ footer a{text-underline-offset:3px}
 </html>`;
 }
 
-const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><g fill="none" stroke="var(--brand-ink)" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="21.5" r="3.2"/><circle cx="21" cy="21.5" r="3.2"/><path d="M13 19 L22 8M19 19 L10 8"/></g></svg>`;
+const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--brand)"/><g fill="none" stroke="var(--brand-ink)" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="21.5" r="3.2"/><circle cx="21" cy="21.5" r="3.2"/><path d="M13 19 L22 8M19 19 L10 8"/></g></svg>`;

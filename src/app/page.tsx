@@ -1,199 +1,239 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { getUser } from "@/lib/auth";
 import { Shortener } from "@/components/shortener";
-import { LiveFeed } from "@/components/live-feed";
-import { SnipStrip } from "@/components/snip-strip";
-import { Item, Reveal, Stagger } from "@/components/motion";
-import { ButtonLink, Logo } from "@/components/ui";
 import { DemoButton } from "@/components/demo-button";
+import { OutputIndex } from "@/components/landing/outputs";
+import { CtaSentence } from "@/components/landing/cta-sentence";
+import { RiseObserver } from "@/components/landing/rise";
 
-const BENEFITS = [
-  {
-    n: "01",
-    title: "Corto, y con tu nombre",
-    body: "Convierte un enlace lleno de parámetros en snip.to/mi-tienda. Fácil de dictar, de imprimir y de recordar.",
-    sample: (
-      <p className="font-mono text-[13px]">
-        <span className="text-ink-3">snip.to/</span>
-        <span className="text-brand">menu-tacos</span>
-      </p>
-    ),
-  },
-  {
-    n: "02",
-    title: "Cada clic, con contexto",
-    body: "Ve cuándo llegó cada visita, desde qué país y ciudad, en qué dispositivo y de qué red social vino.",
-    sample: (
-      <p className="flex flex-wrap gap-1.5 text-xs">
-        {["México 34%", "Móvil 61%", "instagram.com"].map((t) => (
-          <span key={t} className="rounded-full border border-line bg-surface px-2 py-0.5 text-ink-2">
-            {t}
-          </span>
-        ))}
-      </p>
-    ),
-  },
-  {
-    n: "03",
-    title: "Un QR listo para imprimir",
-    body: "Cada enlace trae su código QR en PNG y SVG para volantes, menús, tarjetas o el stand de un evento.",
-    sample: (
-      <svg viewBox="0 0 21 21" className="size-10 text-ink" aria-hidden>
-        <path
-          fill="currentColor"
-          d="M0 0h7v7H0zM1 1v5h5V1zM2 2h3v3H2zM14 0h7v7h-7zM15 1v5h5V1zM16 2h3v3h-3zM0 14h7v7H0zM1 15v5h5v-5zM2 16h3v3H2zM9 0h2v2H9zM9 3h1v3H9zM11 4h2v2h-2zM8 8h3v1H8zM12 9h2v2h-2zM9 10h2v2H9zM15 9h3v1h-3zM19 8h2v3h-2zM16 11h2v2h-2zM9 14h2v3H9zM12 13h1v4h-1zM14 15h3v2h-3zM18 14h3v1h-3zM19 16h2v3h-2zM14 18h2v3h-2zM10 19h3v2h-3zM8 12h1v1H8zM0 9h3v2H0zM4 8h2v3H4z"
-        />
-      </svg>
-    ),
-  },
+/**
+ * Landing de Snip. Dirección "Colour chapters" (taste-skill, semilla 1627843826):
+ * la página es una fila de carteles pegados en la calle, que es donde viven los
+ * enlaces cortos impresos de los negocios. Cada capítulo es un campo de color plano.
+ */
+
+const PHOTOS = {
+  wall: { src: "/media/condesa-wall-copa-playstation.jpg", w: 1024, h: 683, alt: "Carteles pegados y despegados en un muro de la colonia Condesa, Ciudad de México" },
+  flyer: { src: "/media/sugar-shack-bus-trip.jpg", w: 1023, h: 828, alt: "Volante amarillo en un cristal con tiras para arrancar que llevan el teléfono" },
+  market: { src: "/media/stallshidalgomkt.jpg", w: 1920, h: 1285, alt: "Puestos de comida y ropa vistos desde arriba en el Mercado Hidalgo de Guanajuato" },
+  menu: { src: "/media/menu-american-coffee-qr-codes-the-hague.jpg", w: 1920, h: 3413, alt: "Menú impreso de una cafetería con dos códigos QR para ver la carta e Instagram" },
+};
+
+const CREDITS = [
+  ["Condesa Wall (Copa Playstation)", "Carl Campbell", "CC BY-SA 2.0", "https://www.flickr.com/photos/10404073@N05/8104110543"],
+  ["Sugar Shack Bus Trip", "Indrid__Cold", "CC BY-SA 2.0", "https://www.flickr.com/photos/29442760@N00/25005834983"],
+  ["StallsHidalgoMkt", "AlejandroLinaresGarcia", "CC BY-SA 4.0", "https://commons.wikimedia.org/w/index.php?curid=11581203"],
+  ["Menu American Coffee QR Codes, The Hague (2023) 01", "Donald Trung Quoc Don", "CC BY-SA 4.0", "https://commons.wikimedia.org/w/index.php?curid=132776869"],
 ];
+
+const STAGES = [
+  { grow: 12, color: "bg-field-1", time: "cinco segundos", text: "Primero pegas el enlace largo y eliges un alias, si quieres." },
+  { grow: 30, color: "bg-field-2", time: "una tarde", text: "Luego lo imprimes en el volante o el menú, o lo mandas por WhatsApp." },
+  { grow: 58, color: "bg-field-4 text-field-4-ink", time: "las semanas que dure", text: "Después cada visita llega a tu panel con país, dispositivo y canal." },
+];
+
+const CHANNELS = ["instagram.com", "whatsapp.com", "t.co", "google.com", "facebook.com", "linkedin.com"];
+
+function Photo({ p, className, priority }: { p: (typeof PHOTOS)[keyof typeof PHOTOS]; className?: string; priority?: boolean }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- fotos ya optimizadas, recortadas por CSS
+    <img
+      src={p.src}
+      width={p.w}
+      height={p.h}
+      alt={p.alt}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      className={`h-full w-full object-cover grayscale contrast-[1.05] ${className ?? ""}`}
+    />
+  );
+}
 
 export default async function Home() {
   const user = await getUser();
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-clip">
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Logo />
-        <nav className="flex items-center gap-1 sm:gap-2" aria-label="Cuenta">
-          {user ? (
-            <ButtonLink href="/dashboard" size="md" icon={<ArrowRight className="order-last size-4" aria-hidden />}>
-              Ir a mi panel
-            </ButtonLink>
-          ) : (
-            <>
-              <ButtonLink href="/login" variant="ghost" size="md">
-                Iniciar sesión
-              </ButtonLink>
-              <ButtonLink href="/register" size="md">
-                Crear cuenta
-              </ButtonLink>
-            </>
-          )}
+    <div className="poster min-h-dvh overflow-x-clip">
+      <RiseObserver />
+
+      {/* ---------- Masthead: la pared ---------- */}
+      <header className="relative">
+        <nav aria-label="Principal" className="absolute inset-x-0 top-0 z-10 flex h-14 items-stretch text-[16px] md:h-16">
+          <Link href="/" className="flex items-center gap-2 bg-[#1c1c1c] px-5 font-bold tracking-[-0.02em] text-[#e3e2da] md:px-8">
+            <svg viewBox="0 0 32 32" className="size-6" aria-hidden>
+              <g fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                <circle cx="11" cy="21.5" r="3.2" />
+                <circle cx="21" cy="21.5" r="3.2" />
+                <path d="M13 19 L22 8M19 19 L10 8" />
+              </g>
+            </svg>
+            <span className="text-[22px]">snip</span>
+          </Link>
+          <div className="hidden items-center gap-7 bg-field-4 px-7 text-field-4-ink md:flex md:w-[calc(42%-118px)]">
+            <a href="#salidas" className="transition-opacity hover:opacity-75">qué te llevas</a>
+            <a href="#pasos" className="transition-opacity hover:opacity-75">cómo funciona</a>
+            <a href="#canales" className="transition-opacity hover:opacity-75">de dónde llegan</a>
+          </div>
+          <div className="ml-auto flex items-center bg-[#1c1c1c] px-5 text-[#e3e2da] md:px-8">
+            {user ? (
+              <Link href="/dashboard" className="font-bold hover:underline">mi panel</Link>
+            ) : (
+              <Link href="/login" className="font-bold hover:underline">entrar</Link>
+            )}
+          </div>
         </nav>
+
+        <div className="grid h-[38svh] grid-cols-3 grid-rows-2 md:h-[46svh] md:grid-cols-6">
+          <div className="col-span-2 overflow-hidden">
+            <Photo p={PHOTOS.wall} priority className="drift" />
+          </div>
+          <div className="bg-field-3" />
+          <div className="hidden overflow-hidden md:block">
+            <Photo p={PHOTOS.flyer} priority />
+          </div>
+          <div className="hidden bg-field-2 md:row-span-2 md:block" />
+          <div className="hidden overflow-hidden md:block">
+            <Photo p={PHOTOS.menu} priority className="object-[50%_40%]" />
+          </div>
+          <div className="bg-field-4" />
+          <div className="overflow-hidden md:col-span-2">
+            <Photo p={PHOTOS.market} priority />
+          </div>
+          <div className="bg-field-2 md:hidden" />
+          <div className="hidden bg-field-3 md:block" />
+          <div className="hidden bg-[#1c1c1c] md:block" />
+        </div>
       </header>
 
-      <main className="relative z-10 flex-1">
-        <section className="mx-auto grid w-full max-w-6xl gap-14 px-5 pt-8 pb-20 sm:px-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14 lg:pt-16 lg:pb-28">
-          <Stagger className="min-w-0">
-            <Item>
-              <p className="mb-6 font-mono text-xs tracking-[0.14em] text-ink-3 uppercase">
-                Acortador de enlaces · <span className="text-ink">con analíticas</span>
-              </p>
-            </Item>
-            <Item>
-              <h1 className="text-[clamp(2.9rem,5.6vw,5.2rem)] leading-[0.9] font-bold tracking-[-0.055em]">
-                Corta el enlace.
-                <br />
-                <span className="relative inline-block text-brand">
-                  Mira quién llega.
-                  <span aria-hidden className="cutline absolute right-0 -bottom-1.5 left-0 h-[3px] [background-image:linear-gradient(90deg,var(--brand)_55%,transparent_0)] [background-size:12px_3px]" />
-                </span>
-              </h1>
-            </Item>
-            <Item>
-              <p className="mt-8 max-w-[46ch] text-[17px] leading-relaxed text-ink-2">
-                Pega un enlace largo y llévate uno corto, su código QR y un registro de cada visita: país, dispositivo y de
-                dónde vino.
-              </p>
-            </Item>
-            <Item className="mt-9">
+      <main>
+        {/* ---------- Hero: título en el eje y el acortador ---------- */}
+        <section aria-labelledby="titulo" className="grid gap-10 px-4 pt-10 pb-24 md:grid-cols-[42%_1fr] md:gap-0 md:px-8 md:pt-14 md:pb-32">
+          <h1 id="titulo" className="order-1 text-[13vw] leading-[0.9] font-bold tracking-[-0.06em] md:order-2 md:text-[clamp(4rem,8.3vw,8rem)]">
+            <span className="mask-line">
+              <span>enlaces cortos</span>
+            </span>
+            <span className="mask-line">
+              <span>que cuentan</span>
+            </span>
+          </h1>
+          <div className="after-title order-2 max-w-[560px] md:order-1 md:pt-3 md:pr-12">
+            <p className="max-w-[30ch] text-[22px] leading-snug">
+              Pega un enlace largo y llévate uno corto, su código QR y cada clic contado: país, dispositivo y de dónde vino.
+            </p>
+            <div className="mt-8">
               <Shortener loggedIn={Boolean(user)} />
-            </Item>
-          </Stagger>
-
-          <Reveal delay={0.25} className="min-w-0 lg:pt-10">
-            <div className="crop rounded-xl border border-line bg-surface-2 p-6 sm:p-8 [background-image:linear-gradient(var(--line)_1px,transparent_1px),linear-gradient(90deg,var(--line)_1px,transparent_1px)] [background-size:28px_28px]">
-              <SnipStrip />
-            </div>
-            <p className="mt-4 font-mono text-[11px] tracking-wide text-ink-3 uppercase">Fig. 1 — Lo que hace Snip, en 4 segundos.</p>
-          </Reveal>
-        </section>
-
-        <section aria-labelledby="clics" className="border-t border-line">
-          <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-20 lg:py-28">
-            <Reveal>
-              <p className="font-mono text-xs tracking-[0.14em] text-brand uppercase">Después del corte</p>
-              <h2 id="clics" className="mt-4 text-[clamp(2rem,4.4vw,3.2rem)] leading-[0.98] font-bold tracking-[-0.045em]">
-                Cada clic deja huella.
-              </h2>
-              <p className="mt-5 max-w-[42ch] text-[16px] leading-relaxed text-ink-2">
-                Snip redirige en milisegundos y anota la visita sin hacer esperar a nadie. Tú ves de dónde llegan, en qué
-                dispositivo y qué canal funcionó.
-              </p>
-              <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-line pt-6">
-                {[
-                  ["302", "redirección sin caché del navegador"],
-                  ["0", "IPs guardadas: solo un hash"],
-                  ["7", "caracteres por enlace generado"],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <dt className="font-display text-[1.9rem] leading-none font-bold tracking-tight tnum">{k}</dt>
-                    <dd className="mt-2 text-[13px] leading-snug text-ink-3">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Reveal>
-            <Reveal delay={0.15}>
-              <LiveFeed />
-            </Reveal>
-          </div>
-        </section>
-
-        <section aria-labelledby="beneficios" className="border-y border-line bg-surface">
-          <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:py-20">
-            <Reveal>
-              <h2 id="beneficios" className="max-w-[22ch] text-[clamp(1.6rem,3.4vw,2.3rem)] leading-tight font-bold">
-                Hecho para quien necesita saber si su enlace funcionó.
-              </h2>
-            </Reveal>
-            <div className="mt-14 grid gap-10 md:grid-cols-3 md:gap-0 md:divide-x md:divide-dashed md:divide-line-strong">
-              {BENEFITS.map((b, i) => (
-                <Reveal key={b.n} delay={i * 0.08} className="md:px-8 md:first:pl-0 md:last:pr-0">
-                  <p className="font-display text-[3.2rem] leading-none font-bold tracking-tight text-brand">{b.n}</p>
-                  <h3 className="mt-5 text-xl font-semibold">{b.title}</h3>
-                  <p className="mt-2 max-w-[38ch] text-[15px] text-ink-2">{b.body}</p>
-                  <div className="mt-5 flex min-h-10 items-center">{b.sample}</div>
-                </Reveal>
-              ))}
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:py-24">
-          <Reveal className="crop grid items-center gap-8 rounded-2xl bg-ink p-8 text-bg sm:p-12 lg:grid-cols-[1fr_auto]">
-            <div>
-              <h2 className="max-w-[20ch] text-[clamp(1.6rem,3.6vw,2.5rem)] leading-tight font-bold">
-                Prueba el panel completo, con datos de ejemplo.
-              </h2>
-              <p className="mt-3 max-w-[50ch] text-[15px] opacity-75">
-                Entra a una cuenta demo con varios enlaces y miles de clics. Sin registrarte, en un clic.
+        {/* ---------- Capítulo salvia: lo que sale de Snip ---------- */}
+        <section id="salidas" aria-labelledby="salidas-t" className="bg-field-2 px-4 py-24 text-field-ink md:px-8 md:py-36">
+          <h2 id="salidas-t" data-rise className="mb-12 text-[11vw] leading-[0.95] font-bold tracking-[-0.05em] md:mb-16 md:text-[clamp(3rem,6.4vw,6.5rem)]">
+            lo que te llevas
+          </h2>
+          <div data-rise style={{ ["--i" as string]: 1 }}>
+            <OutputIndex />
+          </div>
+        </section>
+
+        {/* ---------- Capítulo rubor: cómo funciona, como una barra de avance ---------- */}
+        <section id="pasos" aria-labelledby="pasos-t" className="bg-field-3 px-4 py-24 text-field-ink md:px-8 md:py-36">
+          <h2 id="pasos-t" data-rise className="mb-16 text-[11vw] leading-[0.95] font-bold tracking-[-0.05em] md:text-[clamp(3rem,6.4vw,6.5rem)]">
+            de la tienda al clic
+          </h2>
+          <ol data-ui className="flex flex-col gap-1.5 md:flex-row" aria-label="Cuánto tarda cada paso">
+            {STAGES.map((s, i) => (
+              <li key={s.time} data-rise style={{ ["--i" as string]: i, flexGrow: s.grow }} className="flex min-w-0 flex-col md:basis-0">
+                <div className={`${s.color} flex min-h-[96px] items-start rounded-[14px] p-5 md:h-[22vh] md:min-h-0`}>
+                  <span className="text-[22px] leading-tight font-bold tracking-[-0.03em] lg:text-[30px]">{s.time}</span>
+                </div>
+                <p className="mt-4 max-w-[22ch] text-[17px] leading-snug md:pr-4">{s.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ---------- Capítulo pizarra: de dónde llegan ---------- */}
+        <section id="canales" aria-labelledby="canales-t" className="bg-field-1 px-4 py-24 text-field-ink md:px-8 md:py-36">
+          <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4 lg:gap-2">
+            <div data-rise className="col-span-2 flex min-h-[200px] flex-col justify-between gap-6 rounded-[14px] bg-field-4 p-6 text-field-4-ink lg:aspect-[3/1] lg:min-h-0 md:p-8">
+              <h2 id="canales-t" className="text-[clamp(2rem,3.4vw,3rem)] leading-[0.95] font-bold tracking-[-0.05em]">de dónde llegan tus clics</h2>
+              <p className="max-w-[42ch] text-[17px] leading-snug">
+                Snip lee el sitio de origen de cada visita. Así sabes si funcionó la historia de Instagram, el grupo de WhatsApp o el volante impreso.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <DemoButton variant="primary" />
-              {!user && (
-                <ButtonLink href="/register" variant="ghost" size="lg" className="text-bg hover:bg-bg/10 hover:text-bg">
-                  Crear cuenta gratis
-                </ButtonLink>
-              )}
+            {CHANNELS.map((c, i) => (
+              <div key={c} data-rise style={{ ["--i" as string]: i + 1 }} className="flex aspect-[3/2] items-start rounded-[14px] bg-[#b4c0c8] p-5 md:p-6">
+                <span className="min-w-0 text-[22px] leading-tight font-bold tracking-[-0.03em] break-words lg:text-[30px]">{c}</span>
+              </div>
+            ))}
+            <div data-rise className="col-span-2 flex items-start rounded-[14px] bg-[#b4c0c8] p-5 md:p-6 lg:col-span-4">
+              <p className="max-w-[60ch] text-[17px] leading-snug">
+                Cuando la visita no trae origen, como al escanear un QR en la calle, el clic cuenta como directo. Las vistas previas de WhatsApp, Slack o X se marcan como bot y no inflan tus números.
+              </p>
             </div>
-          </Reveal>
+          </div>
+        </section>
+
+        {/* ---------- Capítulo oliva: la frase con hueco ---------- */}
+        <section aria-labelledby="cierre" className="bg-field-4 px-4 py-24 text-field-4-ink md:px-8 md:py-36">
+          <div data-rise className="md:w-11/12">
+            <CtaSentence />
+          </div>
         </section>
       </main>
 
-      <footer className="relative z-10 border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-6 text-[13px] text-ink-3 sm:px-8">
-          <p>Snip · Acortador de enlaces con analíticas</p>
-          <nav className="flex gap-5" aria-label="Legal">
-            <Link href="/privacy" className="hover:text-ink">
-              Privacidad
-            </Link>
-            <Link href="/login" className="hover:text-ink">
-              Iniciar sesión
-            </Link>
-          </nav>
+      {/* ---------- Pie: el nombre primero ---------- */}
+      <footer className="bg-[#1c1c1c] px-4 pt-10 pb-8 text-[#e3e2da] md:px-8">
+        <div aria-hidden className="h-[0.74em] overflow-hidden text-[34vw] leading-[0.9] font-bold tracking-[-0.07em]">
+          snip
+        </div>
+        <div className="mt-16 grid gap-12 md:grid-cols-12">
+          <ul className="grid content-start gap-3 md:col-span-5">
+            <li>
+              <DemoButton
+                variant="ghost"
+                size="lg"
+                label="entra a la demo"
+                className="!h-auto !gap-3 !rounded-none !bg-transparent !p-0 text-[clamp(1.6rem,2.4vw,2.25rem)] !font-bold tracking-[-0.03em] !text-field-2 hover:underline"
+              />
+            </li>
+            <li>
+              <Link href="/register" className="text-[clamp(1.6rem,2.4vw,2.25rem)] font-bold tracking-[-0.03em] text-field-2 hover:underline">
+                crea tu cuenta
+              </Link>
+            </li>
+            <li>
+              <a href="https://github.com/KrlosEng/snip" className="text-[clamp(1.6rem,2.4vw,2.25rem)] font-bold tracking-[-0.03em] text-field-2 hover:underline">
+                el código en github
+              </a>
+            </li>
+          </ul>
+          <div className="grid grid-cols-2 gap-8 text-[15px] md:col-span-7 md:grid-cols-3">
+            <ul className="grid content-start gap-2">
+              <li><Link href="/login" className="hover:underline">Iniciar sesión</Link></li>
+              <li><Link href="/register" className="hover:underline">Crear cuenta</Link></li>
+              <li><Link href="/privacy" className="hover:underline">Privacidad</Link></li>
+            </ul>
+            <ul className="grid content-start gap-2">
+              <li><a href="#salidas" className="hover:underline">Qué te llevas</a></li>
+              <li><a href="#pasos" className="hover:underline">Cómo funciona</a></li>
+              <li><a href="#canales" className="hover:underline">De dónde llegan</a></li>
+            </ul>
+            <p className="col-span-2 leading-relaxed break-words text-[#b9b8b1] md:col-span-1">
+              Fotos:{" "}
+              {CREDITS.map(([t, a, l, href], i) => (
+                <span key={href}>
+                  <a href={href} className="underline underline-offset-2 hover:text-[#e3e2da]">{t}</a> de {a}, {l}
+                  {i < CREDITS.length - 1 ? "; " : "."}
+                </span>
+              ))}
+            </p>
+          </div>
+        </div>
+        <div className="mt-24 flex flex-wrap justify-between gap-4 text-[13px] text-[#b9b8b1]">
+          <p>Snip · acortador de enlaces con analíticas</p>
+          <a href="#titulo" className="hover:text-[#e3e2da]">volver arriba</a>
         </div>
       </footer>
     </div>

@@ -104,7 +104,7 @@ export function DetailView({
               </span>
             )}
           </div>
-          <h1 className="flex flex-wrap items-center gap-x-2 font-mono text-[clamp(1.4rem,3.6vw,2.1rem)] leading-tight font-medium tracking-tight">
+          <h1 className="flex flex-wrap items-center gap-x-2 font-mono text-[clamp(1.25rem,2.6vw,1.75rem)] leading-tight font-medium tracking-tight">
             <span className="min-w-0 break-all">
               <span className="text-ink-3">{host}/</span>
               {link.slug}
@@ -152,7 +152,7 @@ export function DetailView({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="grid min-w-0 gap-6">
           {/* KPIs + rango */}
-          <Item className="overflow-hidden rounded-2xl border border-line bg-surface shadow-1">
+          <Item className="overflow-hidden rounded-xl border border-line bg-surface">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3 sm:px-6">
               <h2 className="text-base font-semibold">Rendimiento</h2>
               <div className="flex gap-0.5 rounded-lg bg-surface-2 p-0.5" role="radiogroup" aria-label="Periodo">
@@ -164,14 +164,14 @@ export function DetailView({
                     onClick={() => start(() => router.replace(`${pathname}?range=${r}`, { scroll: false }))}
                     className={cx("relative h-8 rounded-md px-3 text-[13px] font-medium transition-colors", stats.range === r ? "text-ink" : "text-ink-3 hover:text-ink")}
                   >
-                    {stats.range === r && <motion.span layoutId="range-pill" className="absolute inset-0 rounded-md bg-surface shadow-1" transition={{ duration: 0.3, ease: EASE }} />}
+                    {stats.range === r && <motion.span layoutId="range-pill" className="absolute inset-0 rounded-md bg-surface" transition={{ duration: 0.3, ease: EASE }} />}
                     <span className="relative">{RANGE_LABEL[r]}</span>
                   </button>
                 ))}
               </div>
             </div>
             <div className={cx("transition-opacity duration-200", pending && "opacity-50")}>
-              <dl className="grid grid-cols-2 border-b border-dashed border-line-strong md:grid-cols-4">
+              <dl className="grid grid-cols-2 border-b border-line md:grid-cols-4">
                 <Stat label="Clics" className="border-r border-b border-line md:border-b-0">
                   <CountUp value={stats.total} />
                   <span
@@ -226,13 +226,13 @@ export function DetailView({
 
         {/* Columna lateral: QR + ficha */}
         <aside className="grid content-start gap-6">
-          <Item className="rounded-2xl border border-line bg-surface p-5 shadow-1">
+          <Item className="rounded-xl border border-line bg-surface p-5">
             <h2 className="mb-4 text-base font-semibold">Código QR</h2>
             <QrPreview value={shortUrl} className="mx-auto w-full max-w-[220px] border border-line" />
             <p className="mt-3 mb-3 text-center text-xs text-ink-3">Apunta a {host}/{link.slug}</p>
             <QrDownloads value={shortUrl} slug={link.slug} linkId={link.id} />
           </Item>
-          <Item className="rounded-2xl border border-line bg-surface p-5 text-sm shadow-1">
+          <Item className="rounded-xl border border-line bg-surface p-5 text-sm">
             <h2 className="mb-3 text-base font-semibold">Ficha</h2>
             <dl className="grid gap-3">
               <Row k="Creado">{dateTime(link.createdAt, timezone)}</Row>
@@ -241,7 +241,7 @@ export function DetailView({
                 <span className="tnum">{fmt(link.clicks)}</span>
               </Row>
               <Row k="Redirección">
-                <span className="rounded-full bg-brand-soft px-2 py-0.5 font-mono text-xs text-brand">302</span>
+                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink-2">302</span>
               </Row>
             </dl>
           </Item>
@@ -263,8 +263,8 @@ function ActionBtn({ children, icon, onClick }: { children: React.ReactNode; ico
 function Stat({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cx("min-w-0 p-4 sm:px-6 sm:py-5", className)}>
-      <dt className="font-mono text-[11px] tracking-[0.12em] text-ink-3 uppercase">{label}</dt>
-      <dd className="mt-3 grid gap-2 font-display text-[1.9rem] leading-none font-bold tracking-[-0.04em]">{children}</dd>
+      <dt className="text-[13px] text-ink-3">{label}</dt>
+      <dd className="mt-2 grid gap-1.5 text-[28px] leading-none font-semibold tracking-[-0.02em]">{children}</dd>
     </div>
   );
 }
@@ -275,7 +275,7 @@ function Small({ children }: { children: React.ReactNode }) {
 
 function Panel({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <Item as="section" className="min-w-0 rounded-2xl border border-line bg-surface p-5 shadow-1">
+    <Item as="section" className="min-w-0 rounded-xl border border-line bg-surface p-5">
       <div className="mb-4 flex items-baseline justify-between gap-2">
         <h2 className="text-base font-semibold">{title}</h2>
         {hint && <span className="text-xs text-ink-3">{hint}</span>}
@@ -328,7 +328,7 @@ function ClicksTable({ linkId, initial, timezone }: { linkId: string; initial: {
   }
 
   return (
-    <Item as="section" className="overflow-hidden rounded-2xl border border-line bg-surface shadow-1">
+    <Item as="section" className="overflow-hidden rounded-xl border border-line bg-surface">
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
         <h2 className="text-base font-semibold">Últimos clics</h2>
         <span className="text-xs text-ink-3">Incluye bots, marcados aparte</span>
@@ -339,7 +339,7 @@ function ClicksTable({ linkId, initial, timezone }: { linkId: string; initial: {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[620px] text-sm">
             <thead>
-              <tr className="border-b border-line bg-surface-2/70 text-left text-[11px] font-semibold tracking-[0.06em] text-ink-3 uppercase">
+              <tr className="border-b border-line text-left text-[12px] text-ink-3">
                 <th className="px-5 py-2.5 font-semibold sm:px-6">Cuándo</th>
                 <th className="px-3 py-2.5 font-semibold">Ubicación</th>
                 <th className="px-3 py-2.5 font-semibold">Dispositivo</th>

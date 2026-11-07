@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { Button, Field, FieldMessage, Input, cx } from "./ui";
-import { SnipTicket } from "./snip-ticket";
+import { TearOffFlyer } from "./tear-off-flyer";
 import { EASE } from "./motion";
 import { useToast } from "./providers";
 import type { LinkDTO } from "@/lib/links";
@@ -180,7 +180,7 @@ function LinkDialog({
         <AnimatePresence mode="wait" initial={false}>
           {created ? (
             <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 sm:p-6">
-              <SnipTicket longUrl={created.url} shortUrl={`${origin}/${created.slug}`} slug={created.slug} linkId={created.id} statsHref={`/links/${created.id}`} />
+              <TearOffFlyer longUrl={created.url} shortUrl={`${origin}/${created.slug}`} slug={created.slug} linkId={created.id} />
               <div className="mt-5 flex justify-end gap-2">
                 <Button
                   variant="secondary"
