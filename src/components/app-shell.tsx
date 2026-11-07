@@ -31,6 +31,15 @@ export function AppShell({ user, host, children }: { user: ShellUser; host: stri
   );
 }
 
+function useLogout() {
+  const router = useRouter();
+  return async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+}
+
 function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -40,11 +49,7 @@ function Sidebar({ user }: { user: ShellUser }) {
   const router = useRouter();
   const { openCreate } = useLinkModal();
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
-  }
+  const logout = useLogout();
 
   return (
     <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
@@ -111,6 +116,7 @@ function Sidebar({ user }: { user: ShellUser }) {
 }
 
 function Topbar() {
+  const logout = useLogout();
   const router = useRouter();
   const pathname = usePathname();
   const { openCreate } = useLinkModal();
@@ -164,6 +170,14 @@ function Topbar() {
           className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3 text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97] lg:hidden"
         >
           <Plus className="size-4" aria-hidden /> Crear
+        </button>
+        <button
+          onClick={logout}
+          className="grid size-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink lg:hidden"
+          aria-label="Cerrar sesión"
+          title="Cerrar sesión"
+        >
+          <LogOut className="size-[18px]" />
         </button>
       </div>
     </header>

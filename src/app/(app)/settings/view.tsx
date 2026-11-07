@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { Button, Field, Input, cx } from "@/components/ui";
 import { EASE, Item, Stagger } from "@/components/motion";
 import { useToast } from "@/components/providers";
@@ -110,6 +110,16 @@ export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: 
         </div>
       </Item>
 
+      <Item as="section" className="rounded-xl border border-line bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
+          <div>
+            <h2 className="text-base font-semibold">Cerrar sesión</h2>
+            <p className="mt-1 text-sm text-ink-3">Sales de {user.email} en este dispositivo.</p>
+          </div>
+          <LogoutButton />
+        </div>
+      </Item>
+
       <Item as="section" className="rounded-xl border border-danger/30 bg-surface">
         <div className="border-b border-danger/20 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold text-danger">Borrar cuenta</h2>
@@ -158,6 +168,27 @@ function ThemePicker() {
         );
       })}
     </div>
+  );
+}
+
+function LogoutButton() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      loading={busy}
+      icon={<LogOut className="size-4" aria-hidden />}
+      onClick={async () => {
+        setBusy(true);
+        await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+        router.push("/login");
+        router.refresh();
+      }}
+    >
+      Cerrar sesión
+    </Button>
   );
 }
 
