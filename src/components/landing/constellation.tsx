@@ -65,7 +65,9 @@ export function Constellation({ shape = "mark", className = "" }: { shape?: "mar
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // Con "reducir movimiento" no se congela: se anima en modo suave (sin viajes largos ni chispas).
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reduce ? 0.5 : 1;
 
     let w = 0;
     let h = 0;
@@ -157,7 +159,7 @@ export function Constellation({ shape = "mark", className = "" }: { shape?: "mar
       const assemble = Math.min(1, t / 2.2);
       const ease = 1 - Math.pow(1 - assemble, 3);
 
-      if (shape === "mark" && now - lastSpark > 1500) {
+      if (!reduce && shape === "mark" && now - lastSpark > 1500) {
         lastSpark = now;
         const targets = parts.filter((p) => p.ph >= 0);
         const p = targets[(Math.random() * targets.length) | 0];
@@ -171,18 +173,19 @@ export function Constellation({ shape = "mark", className = "" }: { shape?: "mar
       }
 
       for (const p of parts) {
-        p.a += p.va;
+        p.a += p.va * calm;
         if (p.ph < 0) {
-          p.x += p.vx;
-          p.y += p.vy;
+          p.x += p.vx * calm;
+          p.y += p.vy * calm;
           if (p.x < -10) p.x = w + 10;
           if (p.x > w + 10) p.x = -10;
           if (p.y < -10) p.y = h + 10;
           if (p.y > h + 10) p.y = -10;
           continue;
         }
-        const wob = Math.sin(t * 0.9 + p.ph) * 2.2;
-        const wob2 = Math.cos(t * 0.7 + p.ph * 1.3) * 2.2;
+        const amp = reduce ? 2.6 : 2.2;
+        const wob = Math.sin(t * 0.9 + p.ph) * amp;
+        const wob2 = Math.cos(t * 0.7 + p.ph * 1.3) * amp;
         const k = 0.012 + 0.03 * ease;
         p.vx += (p.tx + wob - p.x) * k;
         p.vy += (p.ty + wob2 - p.y) * k;
@@ -212,17 +215,10 @@ export function Constellation({ shape = "mark", className = "" }: { shape?: "mar
     }
 
     build();
-    if (reduce) {
-      draw(0);
-    } else {
-      t0 = performance.now();
-      raf = requestAnimationFrame(frame);
-    }
+    t0 = performance.now();
+    raf = requestAnimationFrame(frame);
 
-    const ro = new ResizeObserver(() => {
-      build();
-      if (reduce) draw(0);
-    });
+    const ro = new ResizeObserver(() => build());
     ro.observe(canvas);
     const io = new IntersectionObserver((es) => (visible = es[0]?.isIntersecting ?? true), { threshold: 0 });
     io.observe(canvas);
