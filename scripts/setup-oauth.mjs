@@ -63,4 +63,4 @@ if (!addEnv(`${P}_CLIENT_ID`, clientId) || !addEnv(`${P}_CLIENT_SECRET`, secret)
 }
 console.log("✓ Guardado. Publicando la app (tarda ~1 minuto)…\n");
 const dep = spawnSync("npx vercel deploy --prod --yes", { stdio: ["ignore", "ignore", "inherit"], shell: true });
-console.log(dep.status === 0 ? `\n✓ Listo. Abre https://snip-acortador.vercel.app/login y verás "Continuar con ${label}".\n` : "\nNo se pudo publicar. Avísale a Claude.");
+console.log(dep.status === 0 ? `\n✓ Listo. Abre https://snip-acortador.vercel.app/login y verás "Continuar con ${label}".\n` : "\nNo se pudo publicar. Revisa el error de arriba.");
