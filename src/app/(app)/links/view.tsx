@@ -4,7 +4,9 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowDownWideNarrow, BarChart3, ChevronLeft, ChevronRight, LoaderCircle, Pencil, Plus, Search, SearchX, Trash2 } from "lucide-react";
+import { ArrowDownWideNarrow, BarChart3, ChevronLeft, ChevronRight, Folder, LoaderCircle, Pencil, Plus, Search, SearchX, Trash2, X } from "lucide-react";
+import { LinksCsv } from "@/components/links-csv";
+import type { Facets } from "@/lib/links";
 import { CopyButton, EASE, Item, Stagger } from "@/components/motion";
 import { useLinkModal } from "@/components/link-modal";
 import { useToast } from "@/components/providers";
@@ -29,6 +31,10 @@ export function LinksView({
   status,
   origin,
   hasAny,
+  folder,
+  tag,
+  facets,
+  readOnly,
 }: {
   data: Data;
   q: string;
@@ -36,6 +42,10 @@ export function LinksView({
   status: Status;
   origin: string;
   hasAny: boolean;
+  folder: string | null;
+  tag: string | null;
+  facets: Facets;
+  readOnly: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -57,9 +67,11 @@ export function LinksView({
 
   function nav(patch: Record<string, string | number | null>) {
     const params = new URLSearchParams();
-    const merged = { q, sort, status, page: data.page, ...patch } as Record<string, string | number | null>;
+    const merged = { q, sort, status, folder, tag, page: data.page, ...patch } as Record<string, string | number | null>;
     if (!("page" in patch)) merged.page = 1;
     if (merged.q) params.set("q", String(merged.q));
+    if (merged.folder !== null && merged.folder !== undefined) params.set("folder", String(merged.folder));
+    if (merged.tag) params.set("tag", String(merged.tag));
     if (merged.sort && merged.sort !== "recent") params.set("sort", String(merged.sort));
     if (merged.status && merged.status !== "all") params.set("status", String(merged.status));
     if (merged.page && Number(merged.page) > 1) params.set("page", String(merged.page));
@@ -141,7 +153,7 @@ export function LinksView({
   }
 
   return (
-    <Stagger className="grid gap-5">
+    <Stagger className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <Item as="header" className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">Mis enlaces</h1>
@@ -155,9 +167,12 @@ export function LinksView({
             )}
           </p>
         </div>
-        <button onClick={openCreate} className="hidden h-9 items-center gap-1.5 rounded-lg bg-brand px-4 text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97] sm:inline-flex">
-          <Plus className="size-4" aria-hidden /> Crear enlace
-        </button>
+        <div className="flex items-center gap-2">
+          <LinksCsv readOnly={readOnly} />
+          <button onClick={openCreate} className="hidden h-9 items-center gap-1.5 rounded-lg bg-brand px-4 text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97] sm:inline-flex">
+            <Plus className="size-4" aria-hidden /> Crear enlace
+          </button>
+        </div>
       </Item>
 
       <Item className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -209,13 +224,62 @@ export function LinksView({
         </div>
       </Item>
 
+      {(facets.folders.length > 0 || facets.tags.length > 0) && (
+        <Item className="flex min-w-0 flex-wrap items-center gap-2">
+          {facets.folders.length > 0 && (
+            <label className="relative flex items-center">
+              <span className="sr-only">Filtrar por carpeta</span>
+              <Folder className="pointer-events-none absolute left-3 size-4 text-ink-3" aria-hidden />
+              <select
+                value={folder === null ? "__all" : folder === "" ? "__none" : folder}
+                onChange={(e) => nav({ folder: e.target.value === "__all" ? null : e.target.value === "__none" ? "" : e.target.value })}
+                className={cx(
+                  "h-9 max-w-[220px] appearance-none truncate rounded-lg border bg-surface pr-4 pl-9 text-[13px] font-medium outline-none hover:border-line-strong focus:border-brand",
+                  folder !== null ? "border-brand text-ink" : "border-line text-ink-2",
+                )}
+              >
+                <option value="__all">Todas las carpetas</option>
+                {facets.folders.map((f) => (
+                  <option key={f.name} value={f.name}>
+                    {f.name} ({f.count})
+                  </option>
+                ))}
+                <option value="__none">Sin carpeta</option>
+              </select>
+            </label>
+          )}
+          {facets.tags.length > 0 && (
+            <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Filtrar por etiqueta">
+              {facets.tags.map((t) => {
+                const on = tag === t.name;
+                return (
+                  <button
+                    key={t.name}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => nav({ tag: on ? null : t.name })}
+                    className={cx(
+                      "inline-flex h-8 shrink-0 items-center gap-1 rounded-full border px-3 text-[13px] font-medium transition-[background-color,border-color,color,transform] active:scale-[0.96]",
+                      on ? "border-brand bg-brand-soft text-ink" : "border-line text-ink-2 hover:border-line-strong hover:text-ink",
+                    )}
+                  >
+                    #{t.name}
+                    {on ? <X className="size-3.5" aria-hidden /> : <span className="text-ink-3 tnum">{t.count}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Item>
+      )}
+
       <Item className={cx("overflow-hidden rounded-xl border border-line bg-surface transition-opacity duration-200", pending && "opacity-60")}>
         {items.length === 0 ? (
           <div className="grid place-items-center px-6 py-16 text-center">
             <SearchX className="size-8 text-ink-3" aria-hidden />
             <p className="mt-3 font-semibold">Nada por aquí</p>
-            <p className="mt-1 text-sm text-ink-2">{q ? "Prueba con otra palabra o quita los filtros." : "No hay enlaces con este estado."}</p>
-            <button onClick={() => nav({ q: null, status: "all" })} className="mt-4 text-sm font-semibold text-brand">
+            <p className="mt-1 text-sm text-ink-2">{q ? "Prueba con otra palabra o quita los filtros." : "No hay enlaces con estos filtros."}</p>
+            <button onClick={() => nav({ q: null, status: "all", folder: null, tag: null })} className="mt-4 text-sm font-semibold text-brand">
               Quitar filtros
             </button>
           </div>
@@ -239,7 +303,7 @@ export function LinksView({
                     exit={{ opacity: 0, x: -24, transition: { duration: 0.22 } }}
                     className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3.5 transition-colors last:border-b-0 hover:bg-surface-2/50 md:grid-cols-[minmax(0,1fr)_96px_88px_72px_136px] md:px-5"
                   >
-                    <div className="min-w-0">
+                    <div className="col-start-1 row-start-1 min-w-0 md:col-auto md:row-auto">
                       <Link href={`/links/${l.id}`} className="block truncate font-mono text-[14px] font-medium hover:text-brand">
                         <span className="text-ink-3">{host}/</span>
                         {l.slug}
@@ -248,18 +312,33 @@ export function LinksView({
                         {l.title ? <span className="text-ink-2">{l.title} · </span> : null}
                         {hostOf(l.url)} · {shortDate(l.createdAt)}
                       </p>
+                      {(l.folder || l.tags.length > 0) && (
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-3">
+                          {l.folder && (
+                            <button type="button" onClick={() => nav({ folder: l.folder })} className="inline-flex items-center gap-1 hover:text-ink">
+                              <Folder className="size-3.5" aria-hidden />
+                              {l.folder}
+                            </button>
+                          )}
+                          {l.tags.map((t) => (
+                            <button key={t} type="button" onClick={() => nav({ tag: t })} className="hover:text-ink">
+                              #{t}
+                            </button>
+                          ))}
+                        </p>
+                      )}
                     </div>
-                    <span className="col-start-1 row-start-2 md:col-auto md:row-auto">
+                    <span className="col-start-1 row-start-2 justify-self-start md:col-auto md:row-auto">
                       <StatusBadge status={l.status} />
                     </span>
-                    <span className="row-start-1 text-right text-sm font-semibold tnum md:row-auto">
+                    <span className="col-start-2 row-start-1 self-start text-right text-sm font-semibold tnum md:col-auto md:row-auto md:self-auto">
                       {fmt(l.clicks)}
                       <span className="font-normal text-ink-3 md:hidden"> clics</span>
                     </span>
                     <span className="hidden justify-center md:flex">
                       <Switch checked={l.isActive} onChange={(v) => toggle(l, v)} label={`${l.isActive ? "Pausar" : "Activar"} ${l.slug}`} disabled={l.status === "expired"} />
                     </span>
-                    <div className="col-start-2 row-start-2 flex items-center justify-end gap-0.5 md:col-auto md:row-auto">
+                    <div className="col-span-2 col-start-1 row-start-2 flex items-center justify-self-end gap-0.5 md:col-span-1 md:col-auto md:row-auto md:justify-self-auto md:justify-end">
                       <span className="mr-1.5 flex md:hidden">
                         <Switch checked={l.isActive} onChange={(v) => toggle(l, v)} label={`${l.isActive ? "Pausar" : "Activar"} ${l.slug}`} disabled={l.status === "expired"} />
                       </span>

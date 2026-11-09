@@ -161,6 +161,9 @@ Tabla clicks  →  la leen /api/links/[id]/stats y el panel
 | Las tablas de la base de datos | `src/lib/db.ts` |
 | El correo con el código | `src/lib/mailer.ts` |
 | La recuperación de contraseña | `src/lib/password-reset.ts` |
+| Carpetas, etiquetas y filtros | `src/lib/links.ts` (`listLinks`, `listFacets`, `setTags`) |
+| El generador UTM | `src/lib/utm.ts` y el formulario en `src/components/link-modal.tsx` |
+| Importar y exportar enlaces en CSV | `src/lib/links-import.ts`, `src/lib/csv.ts`, `src/app/api/links/{import,export}` |
 | Las reglas de uso aceptable | `src/app/uso-aceptable/page.tsx` |
 | Los datos de la cuenta demo | `src/lib/seed.ts` |
 

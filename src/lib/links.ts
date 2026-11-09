@@ -17,6 +17,8 @@ export type LinkDTO = {
   clicks: number;
   createdAt: number;
   updatedAt: number;
+  folder: string | null;
+  tags: string[];
 };
 
 export function statusOf(l: Pick<LinkRow, "is_active" | "expires_at">): LinkStatus {
@@ -33,10 +35,11 @@ export function normalize(l: LinkRow): LinkRow {
     click_count: Number(l.click_count),
     created_at: Number(l.created_at),
     updated_at: Number(l.updated_at),
+    folder: l.folder ?? null,
   };
 }
 
-export function toDTO(raw: LinkRow): LinkDTO {
+export function toDTO(raw: LinkRow, tags: string[] = []): LinkDTO {
   const l = normalize(raw);
   return {
     id: l.id,
@@ -49,6 +52,59 @@ export function toDTO(raw: LinkRow): LinkDTO {
     clicks: l.click_count,
     createdAt: l.created_at,
     updatedAt: l.updated_at,
+    folder: l.folder ?? null,
+    tags,
+  };
+}
+
+/* ---------- Etiquetas ---------- */
+
+async function tagsFor(ids: string[]): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  if (!ids.length) return map;
+  const rows = await all<{ link_id: string; tag: string }>(
+    `SELECT link_id, tag FROM link_tags WHERE link_id IN (${ids.map(() => "?").join(", ")}) ORDER BY tag`,
+    ...ids,
+  );
+  for (const r of rows) map.set(r.link_id, [...(map.get(r.link_id) ?? []), r.tag]);
+  return map;
+}
+
+/** Convierte filas en DTO con sus etiquetas (una sola consulta extra). */
+export async function withTags(rows: LinkRow[]): Promise<LinkDTO[]> {
+  const tags = await tagsFor(rows.map((r) => r.id));
+  return rows.map((r) => toDTO(r, tags.get(r.id) ?? []));
+}
+
+export async function linkDTO(row: LinkRow): Promise<LinkDTO> {
+  return (await withTags([row]))[0];
+}
+
+/** Reemplaza las etiquetas de un enlace (ya normalizadas con cleanTags). */
+export async function setTags(linkId: string, userId: string, tags: string[]): Promise<void> {
+  await run("DELETE FROM link_tags WHERE link_id = ?", linkId);
+  for (const t of tags) {
+    await run("INSERT INTO link_tags (link_id, user_id, tag) VALUES (?, ?, ?) ON CONFLICT (link_id, tag) DO NOTHING", linkId, userId, t);
+  }
+}
+
+export type Facets = { folders: { name: string; count: number }[]; tags: { name: string; count: number }[] };
+
+/** Carpetas y etiquetas que ya usa la persona, con cuántos enlaces tiene cada una. */
+export async function listFacets(userId: string): Promise<Facets> {
+  const [folders, tags] = await Promise.all([
+    all<{ name: string; n: number }>(
+      "SELECT folder AS name, CAST(COUNT(*) AS INTEGER) AS n FROM links WHERE user_id = ? AND folder IS NOT NULL GROUP BY folder ORDER BY LOWER(folder)",
+      userId,
+    ),
+    all<{ name: string; n: number }>(
+      "SELECT tag AS name, CAST(COUNT(*) AS INTEGER) AS n FROM link_tags WHERE user_id = ? GROUP BY tag ORDER BY COUNT(*) DESC, tag LIMIT 50",
+      userId,
+    ),
+  ]);
+  return {
+    folders: folders.map((f) => ({ name: f.name, count: Number(f.n) })),
+    tags: tags.map((t) => ({ name: t.name, count: Number(t.n) })),
   };
 }
 
@@ -69,6 +125,9 @@ export async function createLink(input: {
   url: string;
   slug?: string | null;
   expiresAt: number | null;
+  title?: string | null;
+  folder?: string | null;
+  tags?: string[];
 }): Promise<LinkRow> {
   const now = Date.now();
   const row: LinkRow = {
@@ -76,18 +135,20 @@ export async function createLink(input: {
     user_id: input.userId,
     slug: input.slug || (await uniqueRandomSlug()),
     destination_url: input.url,
-    title: null,
+    title: input.title?.trim() || null,
     is_active: 1,
     expires_at: input.expiresAt,
     click_count: 0,
     created_at: now,
     updated_at: now,
+    folder: input.userId ? (input.folder ?? null) : null,
   };
   await run(
-    `INSERT INTO links (id, user_id, slug, destination_url, title, is_active, expires_at, click_count, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    row.id, row.user_id, row.slug, row.destination_url, row.title, row.is_active, row.expires_at, 0, now, now,
+    `INSERT INTO links (id, user_id, slug, destination_url, title, is_active, expires_at, click_count, created_at, updated_at, folder)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    row.id, row.user_id, row.slug, row.destination_url, row.title, row.is_active, row.expires_at, 0, now, now, row.folder ?? null,
   );
+  if (input.userId && input.tags?.length) await setTags(row.id, input.userId, input.tags);
   return row;
 }
 
@@ -97,7 +158,16 @@ export async function getOwnLink(userId: string, id: string): Promise<LinkRow | 
   return row ? normalize(row) : null;
 }
 
-export type ListParams = { q?: string; sort?: "recent" | "clicks" | "oldest"; page?: number; status?: "all" | LinkStatus; pageSize?: number };
+export type ListParams = {
+  q?: string;
+  sort?: "recent" | "clicks" | "oldest";
+  page?: number;
+  status?: "all" | LinkStatus;
+  pageSize?: number;
+  /** Nombre de carpeta, o "" para "sin carpeta". */
+  folder?: string | null;
+  tag?: string | null;
+};
 
 export async function listLinks(userId: string, p: ListParams) {
   const pageSize = p.pageSize ?? 10;
@@ -108,6 +178,16 @@ export async function listLinks(userId: string, p: ListParams) {
     where.push("(LOWER(slug) LIKE ? OR LOWER(destination_url) LIKE ? OR LOWER(COALESCE(title,'')) LIKE ?)");
     const like = `%${p.q.trim().toLowerCase().replace(/[%_\\]/g, "")}%`;
     args.push(like, like, like);
+  }
+  if (p.folder === "") {
+    where.push("folder IS NULL");
+  } else if (p.folder) {
+    where.push("folder = ?");
+    args.push(p.folder);
+  }
+  if (p.tag) {
+    where.push("id IN (SELECT link_id FROM link_tags WHERE user_id = ? AND tag = ?)");
+    args.push(userId, p.tag);
   }
   const now = Date.now();
   if (p.status === "active") {
@@ -124,12 +204,12 @@ export async function listLinks(userId: string, p: ListParams) {
   const w = where.join(" AND ");
   const total = Number((await get<{ n: number }>(`SELECT CAST(COUNT(*) AS INTEGER) AS n FROM links WHERE ${w}`, ...args))?.n ?? 0);
   const rows = await all<LinkRow>(`SELECT * FROM links WHERE ${w} ORDER BY ${order} LIMIT ? OFFSET ?`, ...args, pageSize, (page - 1) * pageSize);
-  return { items: rows.map(toDTO), total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)) };
+  return { items: await withTags(rows), total, page, pageSize, pages: Math.max(1, Math.ceil(total / pageSize)) };
 }
 
 export async function updateLink(
   link: LinkRow,
-  patch: { url?: string; slug?: string; expiresAt?: number | null; isActive?: boolean; title?: string | null },
+  patch: { url?: string; slug?: string; expiresAt?: number | null; isActive?: boolean; title?: string | null; folder?: string | null; tags?: string[] },
 ): Promise<LinkRow> {
   const next: LinkRow = {
     ...link,
@@ -138,12 +218,14 @@ export async function updateLink(
     expires_at: patch.expiresAt !== undefined ? patch.expiresAt : link.expires_at,
     is_active: patch.isActive !== undefined ? (patch.isActive ? 1 : 0) : link.is_active,
     title: patch.title !== undefined ? patch.title : link.title,
+    folder: patch.folder !== undefined ? patch.folder : (link.folder ?? null),
     updated_at: Date.now(),
   };
   await run(
-    `UPDATE links SET destination_url = ?, slug = ?, expires_at = ?, is_active = ?, title = ?, updated_at = ? WHERE id = ?`,
-    next.destination_url, next.slug, next.expires_at, next.is_active, next.title, next.updated_at, link.id,
+    `UPDATE links SET destination_url = ?, slug = ?, expires_at = ?, is_active = ?, title = ?, folder = ?, updated_at = ? WHERE id = ?`,
+    next.destination_url, next.slug, next.expires_at, next.is_active, next.title, next.folder ?? null, next.updated_at, link.id,
   );
+  if (patch.tags !== undefined && link.user_id) await setTags(link.id, link.user_id, patch.tags);
   await cacheDelete(link.slug, next.slug);
   return next;
 }
@@ -154,7 +236,7 @@ export async function deleteLink(link: LinkRow): Promise<void> {
 }
 
 export async function recentLinks(userId: string, n = 5): Promise<LinkDTO[]> {
-  return (await all<LinkRow>("SELECT * FROM links WHERE user_id = ? ORDER BY created_at DESC LIMIT ?", userId, n)).map(toDTO);
+  return withTags(await all<LinkRow>("SELECT * FROM links WHERE user_id = ? ORDER BY created_at DESC LIMIT ?", userId, n));
 }
 
 /** Toma el <title> del destino (en segundo plano, con límite de tiempo). */

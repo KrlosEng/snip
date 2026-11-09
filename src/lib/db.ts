@@ -111,11 +111,29 @@ CREATE INDEX IF NOT EXISTS password_resets_user_idx ON password_resets(user_id);
 CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions(user_id);
 `,
   },
+  {
+    version: 3,
+    name: "carpetas y etiquetas",
+    sql: `
+ALTER TABLE links ADD COLUMN IF NOT EXISTS folder TEXT;
+CREATE INDEX IF NOT EXISTS links_user_folder_idx ON links(user_id, folder);
+CREATE TABLE IF NOT EXISTS link_tags (
+  link_id TEXT NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tag TEXT NOT NULL,
+  PRIMARY KEY (link_id, tag)
+);
+CREATE INDEX IF NOT EXISTS link_tags_user_tag_idx ON link_tags(user_id, tag);
+`,
+  },
 ];
 
 /** Traduce el SQL de Postgres al dialecto de SQLite. */
 export function toSqlite(sql: string): string {
-  return sql.replace(/DOUBLE PRECISION/g, "INTEGER").replace(/id SERIAL PRIMARY KEY/g, "id INTEGER PRIMARY KEY AUTOINCREMENT");
+  return sql
+    .replace(/DOUBLE PRECISION/g, "INTEGER")
+    .replace(/id SERIAL PRIMARY KEY/g, "id INTEGER PRIMARY KEY AUTOINCREMENT")
+    .replace(/ADD COLUMN IF NOT EXISTS/g, "ADD COLUMN");
 }
 
 /* ------------------------------ Motores ------------------------------ */
@@ -222,6 +240,7 @@ export type LinkRow = {
   click_count: number;
   created_at: number;
   updated_at: number;
+  folder?: string | null;
 };
 
 export type ClickRow = {

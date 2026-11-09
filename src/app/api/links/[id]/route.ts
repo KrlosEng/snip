@@ -1,12 +1,12 @@
 import { apiUser, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
-import { deleteLink, getOwnLink, slugExists, toDTO, updateLink } from "@/lib/links";
+import { deleteLink, getOwnLink, linkDTO, slugExists, updateLink } from "@/lib/links";
 import { checkDestination, parseExpiry, updateLinkSchema } from "@/lib/validation";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/links/[id]">) {
   const user = await apiUser();
   if (user instanceof Response) return user;
   const link = await getOwnLink(user.id, (await ctx.params).id);
-  return link ? json({ link: toDTO(link) }) : fail(404, "No encontramos ese enlace.");
+  return link ? json({ link: await linkDTO(link) }) : fail(404, "No encontramos ese enlace.");
 }
 
 export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) {
@@ -44,7 +44,9 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) 
   }
   if (p.isActive !== undefined) patch.isActive = p.isActive;
   if (p.title !== undefined) patch.title = p.title?.trim() || null;
-  return json({ link: toDTO(await updateLink(link, patch)) });
+  if (p.folder !== undefined) patch.folder = p.folder;
+  if (p.tags !== undefined) patch.tags = p.tags;
+  return json({ link: await linkDTO(await updateLink(link, patch)) });
 }
 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/links/[id]">) {

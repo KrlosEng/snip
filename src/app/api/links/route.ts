@@ -2,7 +2,7 @@ import { after, type NextRequest } from "next/server";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/cache";
 import { apiUser, clientIp, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
-import { createLink, fetchTitle, isUnsafe, listLinks, slugExists, toDTO, updateLink } from "@/lib/links";
+import { createLink, fetchTitle, isUnsafe, linkDTO, listLinks, slugExists, updateLink } from "@/lib/links";
 import { get, type LinkRow } from "@/lib/db";
 import { checkDestination, createLinkSchema, parseExpiry } from "@/lib/validation";
 
@@ -20,6 +20,8 @@ export async function GET(req: NextRequest) {
       sort: sort === "clicks" || sort === "oldest" ? sort : "recent",
       status: status === "active" || status === "paused" || status === "expired" ? status : "all",
       page: Number(sp.get("page")) || 1,
+      folder: sp.get("folder"),
+      tag: sp.get("tag"),
     }),
   );
 }
@@ -65,7 +67,15 @@ export async function POST(req: Request) {
 
   let link: LinkRow;
   try {
-    link = await createLink({ userId: user?.id ?? null, url: dest.url, slug: alias, expiresAt });
+    link = await createLink({
+      userId: user?.id ?? null,
+      url: dest.url,
+      slug: alias,
+      expiresAt,
+      title: user ? parsed.data.title : null,
+      folder: parsed.data.folder,
+      tags: parsed.data.tags,
+    });
   } catch {
     return fail(409, "Ese alias acaba de ser ocupado. Prueba otro.", { field: "alias" });
   }
@@ -78,5 +88,5 @@ export async function POST(req: Request) {
     }
   });
 
-  return json({ link: toDTO(link), anonymous: !user }, 201);
+  return json({ link: await linkDTO(link), anonymous: !user }, 201);
 }

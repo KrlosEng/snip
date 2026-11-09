@@ -132,6 +132,7 @@ async function seed(): Promise<string> {
       await insertMany("clicks", CLICK_COLS, rows);
       await run("UPDATE links SET click_count = ? WHERE id = ?", human, id);
     }
+    await organizeDemo(userId);
   } catch (e) {
     // Si algo falla, no dejamos una demo a medias.
     await run("DELETE FROM users WHERE id = ?", userId);
@@ -140,8 +141,32 @@ async function seed(): Promise<string> {
   return userId;
 }
 
+/** Carpetas y etiquetas de ejemplo (para que la demo muestre los filtros). */
+const ORGANIZE: Record<string, { folder: string; tags: string[] }> = {
+  "launch-v2": { folder: "Lanzamientos", tags: ["producto", "redes"] },
+  "webinar-nov": { folder: "Lanzamientos", tags: ["eventos"] },
+  "menu-tacos": { folder: "Clientes", tags: ["restaurante"] },
+  "promo-buen-fin": { folder: "Clientes", tags: ["promo", "whatsapp"] },
+  "promo-verano": { folder: "Clientes", tags: ["promo"] },
+  bio: { folder: "Personal", tags: ["redes"] },
+};
+
+async function organizeDemo(userId: string): Promise<void> {
+  if (await get("SELECT 1 AS x FROM link_tags WHERE user_id = ? LIMIT 1", userId)) return;
+  const rows = await all<{ id: string; slug: string }>("SELECT id, slug FROM links WHERE user_id = ?", userId);
+  for (const r of rows) {
+    const o = ORGANIZE[r.slug];
+    if (!o) continue;
+    await run("UPDATE links SET folder = ? WHERE id = ? AND folder IS NULL", o.folder, r.id);
+    for (const t of o.tags) {
+      await run("INSERT INTO link_tags (link_id, user_id, tag) VALUES (?, ?, ?) ON CONFLICT (link_id, tag) DO NOTHING", r.id, userId, t);
+    }
+  }
+}
+
 /** Mantiene viva la demo: rellena los clics desde la última visita hasta ahora. */
 async function topUpDemo(userId: string, now: number): Promise<void> {
+  await organizeDemo(userId);
   const rows = await all<{ id: string; slug: string; created_at: number; is_active: number; expires_at: number | null; last: number | null }>(
     `SELECT l.id, l.slug, l.created_at, l.is_active, l.expires_at,
             (SELECT MAX(clicked_at) FROM clicks c WHERE c.link_id = l.id) AS last

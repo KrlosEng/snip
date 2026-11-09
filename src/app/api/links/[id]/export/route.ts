@@ -1,13 +1,7 @@
 import { apiUser, fail } from "@/lib/http";
 import { getOwnLink } from "@/lib/links";
 import { all, type ClickRow } from "@/lib/db";
-
-/** Escapa una celda CSV y neutraliza fórmulas (inyección en Excel). */
-function esc(v: unknown): string {
-  const s = v === null || v === undefined ? "" : String(v);
-  const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
-  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-}
+import { csvCell as esc } from "@/lib/csv";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/links/[id]/export">) {
   const user = await apiUser();
