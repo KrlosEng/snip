@@ -16,13 +16,22 @@ const NAV = [
 
 type ShellUser = { name: string; email: string };
 
-export function AppShell({ user, host, children }: { user: ShellUser; host: string; children: ReactNode }) {
+export function AppShell({ user, host, isDemo, children }: { user: ShellUser; host: string; isDemo?: boolean; children: ReactNode }) {
   return (
     <LinkModalProvider host={host}>
       <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
         <Sidebar user={user} />
         <div className="flex min-w-0 flex-col pb-[calc(env(safe-area-inset-bottom)+4.5rem)] lg:pb-0">
           <Topbar />
+          {isDemo && (
+            <p className="border-b border-line bg-brand-soft px-4 py-2.5 text-center text-[13px] text-ink sm:px-6">
+              Estás en la cuenta demo, de solo lectura.{" "}
+              <Link href="/register" className="font-semibold text-brand underline-offset-4 hover:underline">
+                Crea tu cuenta gratis
+              </Link>{" "}
+              para crear y editar enlaces.
+            </p>
+          )}
           <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 pt-4 pb-10 sm:px-6 lg:px-8 lg:pt-6">{children}</main>
         </div>
         <BottomNav />

@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getUser, type PublicUser } from "./auth";
+import { DEMO_EMAIL } from "./seed";
 
 export function json(data: unknown, init?: number | ResponseInit) {
   return NextResponse.json(data, typeof init === "number" ? { status: init } : init);
@@ -15,6 +16,16 @@ export function fail(status: number, error: string, extra?: Record<string, unkno
 export async function apiUser(): Promise<PublicUser | NextResponse> {
   const user = await getUser();
   return user ?? fail(401, "Inicia sesión para continuar.");
+}
+
+/**
+ * La cuenta demo es pública (se entra sin contraseña), así que no puede crear,
+ * editar ni borrar nada: si pudiera, cualquiera podría cambiar el destino de sus
+ * enlaces y usarlos para phishing con nuestro dominio.
+ */
+export function demoReadOnly(user: PublicUser | null): NextResponse | null {
+  if (user?.email !== DEMO_EMAIL) return null;
+  return fail(403, "La cuenta demo es de solo lectura. Crea una cuenta gratis para crear y editar tus propios enlaces.", { demo: true });
 }
 
 export function clientIp(h: Headers): string {

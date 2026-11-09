@@ -81,8 +81,9 @@ export function LinksView({
       body: JSON.stringify({ isActive: active }),
     }).catch(() => null);
     if (!res?.ok) {
+      const data = await res?.json().catch(() => null);
       setItems((cur) => cur.map((l) => (l.id === link.id ? link : l)));
-      toast({ tone: "error", title: "No se pudo cambiar el estado", body: "Intenta de nuevo." });
+      toast({ tone: "error", title: "No se pudo cambiar el estado", body: data?.error ?? "Intenta de nuevo." });
       return;
     }
     toast({ tone: "success", title: active ? "Enlace activado" : "Enlace pausado", body: active ? "Ya redirige a su destino." : "Quien lo abra verá que está pausado." });
@@ -97,8 +98,9 @@ export function LinksView({
       if (undone) return;
       const res = await fetch(`/api/links/${link.id}`, { method: "DELETE" }).catch(() => null);
       if (!res?.ok) {
+        const data = await res?.json().catch(() => null);
         setItems(snapshot);
-        toast({ tone: "error", title: "No se pudo borrar el enlace" });
+        toast({ tone: "error", title: "No se pudo borrar el enlace", body: data?.error });
         return;
       }
       router.refresh();

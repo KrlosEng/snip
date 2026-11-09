@@ -63,8 +63,9 @@ export function DetailView({
       body: JSON.stringify({ isActive: active }),
     }).catch(() => null);
     if (!res?.ok) {
+      const data = await res?.json().catch(() => null);
       setLink(prev);
-      toast({ tone: "error", title: "No se pudo cambiar el estado" });
+      toast({ tone: "error", title: "No se pudo cambiar el estado", body: data?.error });
       return;
     }
     toast({ tone: "success", title: active ? "Enlace activado" : "Enlace pausado" });
@@ -75,8 +76,9 @@ export function DetailView({
     setDeleting(true);
     const res = await fetch(`/api/links/${link.id}`, { method: "DELETE" }).catch(() => null);
     if (!res?.ok) {
+      const data = await res?.json().catch(() => null);
       setDeleting(false);
-      toast({ tone: "error", title: "No se pudo borrar el enlace" });
+      toast({ tone: "error", title: "No se pudo borrar el enlace", body: data?.error });
       return;
     }
     toast({ tone: "success", title: "Enlace borrado", body: `${host}/${link.slug} y sus clics se eliminaron.` });

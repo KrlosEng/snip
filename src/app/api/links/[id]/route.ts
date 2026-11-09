@@ -1,4 +1,4 @@
-import { apiUser, fail, json, ownHosts } from "@/lib/http";
+import { apiUser, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
 import { deleteLink, getOwnLink, slugExists, toDTO, updateLink } from "@/lib/links";
 import { checkDestination, parseExpiry, updateLinkSchema } from "@/lib/validation";
 
@@ -12,6 +12,8 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/links/[id]">) {
 export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) {
   const user = await apiUser();
   if (user instanceof Response) return user;
+  const blocked = demoReadOnly(user);
+  if (blocked) return blocked;
   const link = await getOwnLink(user.id, (await ctx.params).id);
   if (!link) return fail(404, "No encontramos ese enlace.");
 
@@ -48,6 +50,8 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/links/[id]">) {
   const user = await apiUser();
   if (user instanceof Response) return user;
+  const blocked = demoReadOnly(user);
+  if (blocked) return blocked;
   const link = await getOwnLink(user.id, (await ctx.params).id);
   if (!link) return fail(404, "No encontramos ese enlace.");
   await deleteLink(link);

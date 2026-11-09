@@ -72,6 +72,11 @@ CREATE TABLE IF NOT EXISTS trusted_devices (
   created_at DOUBLE PRECISION NOT NULL,
   PRIMARY KEY (token_hash, user_id)
 );
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT PRIMARY KEY,
+  window_start DOUBLE PRECISION NOT NULL,
+  count INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS challenges (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

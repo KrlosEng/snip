@@ -1,7 +1,7 @@
 import { after, type NextRequest } from "next/server";
 import { getUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/cache";
-import { apiUser, clientIp, fail, json, ownHosts } from "@/lib/http";
+import { apiUser, clientIp, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
 import { createLink, fetchTitle, isUnsafe, listLinks, slugExists, toDTO, updateLink } from "@/lib/links";
 import { get, type LinkRow } from "@/lib/db";
 import { checkDestination, createLinkSchema, parseExpiry } from "@/lib/validation";
@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   const user = await getUser();
+  const blocked = demoReadOnly(user);
+  if (blocked) return blocked;
   const ip = clientIp(req.headers);
   const limit = user ? await rateLimit(`links:u:${user.id}`, 100) : await rateLimit(`links:ip:${ip}`, 10);
   if (!limit.ok) {

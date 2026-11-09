@@ -2,6 +2,7 @@ import "server-only";
 import { all, get, run, type LinkRow } from "./db";
 import { randomSlug, uuid } from "./ids";
 import { cacheDelete } from "./cache";
+import { safeFetch } from "./net-guard";
 
 export type LinkStatus = "active" | "paused" | "expired";
 
@@ -161,9 +162,9 @@ export async function fetchTitle(url: string): Promise<string | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 3000);
-    const res = await fetch(url, {
+    // safeFetch rechaza direcciones internas y revisa cada redirección (anti-SSRF).
+    const res = await safeFetch(url, {
       signal: ctrl.signal,
-      redirect: "follow",
       headers: { "User-Agent": "SnipBot/1.0 (+title preview)", Accept: "text/html" },
     });
     clearTimeout(t);

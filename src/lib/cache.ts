@@ -1,4 +1,6 @@
 import "server-only";
+import { get, run } from "./db";
+import { sha256 } from "./ids";
 
 /**
  * Caché de slugs para que la redirección no toque la base de datos.
@@ -79,10 +81,12 @@ export async function cacheDelete(...slugs: string[]): Promise<void> {
 
 export const cacheBackend = useRedis ? "redis" : "memory";
 
-/* ---------- Límite de uso (ventana fija por hora) ---------- */
-
-const rl = ((globalThis as unknown as { __snipRl?: Map<string, { n: number; reset: number }> }).__snipRl ??= new Map());
-(globalThis as unknown as { __snipRl?: typeof rl }).__snipRl = rl;
+/* ---------- Límite de uso (ventana fija) ---------- */
+/*
+ * En Vercel hay muchas instancias que se reinician, así que un contador en
+ * memoria casi no frena a nadie. Sin Redis, el contador vive en la base de
+ * datos, compartida por todas. La clave se guarda como hash: nunca la IP.
+ */
 
 export async function rateLimit(key: string, limit: number, windowSec = 3600): Promise<{ ok: boolean; remaining: number; resetIn: number }> {
   if (useRedis) {
@@ -96,12 +100,25 @@ export async function rateLimit(key: string, limit: number, windowSec = 3600): P
       return { ok: true, remaining: limit, resetIn: windowSec };
     }
   }
-  const now = Date.now();
-  const cur = rl.get(key);
-  if (!cur || cur.reset < now) {
-    rl.set(key, { n: 1, reset: now + windowSec * 1000 });
-    return { ok: true, remaining: limit - 1, resetIn: windowSec };
+  try {
+    const now = Date.now();
+    const cutoff = now - windowSec * 1000;
+    // Un solo INSERT … ON CONFLICT atómico: suma 1, o reinicia si la ventana ya pasó.
+    const row = await get<{ count: number; window_start: number }>(
+      `INSERT INTO rate_limits (key, window_start, count) VALUES (?, ?, 1)
+       ON CONFLICT (key) DO UPDATE SET
+         count = CASE WHEN rate_limits.window_start < ? THEN 1 ELSE rate_limits.count + 1 END,
+         window_start = CASE WHEN rate_limits.window_start < ? THEN ? ELSE rate_limits.window_start END
+       RETURNING count, window_start`,
+      sha256(key), now, cutoff, cutoff, now,
+    );
+    if (Math.random() < 0.02) void run("DELETE FROM rate_limits WHERE window_start < ?", now - 2 * 86_400_000).catch(() => {});
+    const n = Number(row?.count ?? 1);
+    const resetIn = Math.max(1, Math.ceil((Number(row?.window_start ?? now) + windowSec * 1000 - now) / 1000));
+    return { ok: n <= limit, remaining: Math.max(0, limit - n), resetIn };
+  } catch (e) {
+    // Si la base falla, se deja pasar (mejor que bloquear a todos), pero queda registrado.
+    console.error("rateLimit: no se pudo consultar el límite", e);
+    return { ok: true, remaining: limit, resetIn: windowSec };
   }
-  cur.n++;
-  return { ok: cur.n <= limit, remaining: Math.max(0, limit - cur.n), resetIn: Math.ceil((cur.reset - now) / 1000) };
 }

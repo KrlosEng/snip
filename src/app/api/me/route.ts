@@ -5,7 +5,7 @@ import { verifyPassword } from "@/lib/ids";
 import { rateLimit } from "@/lib/cache";
 import { DELETE_COOKIE, checkChallenge, verificationEnabled } from "@/lib/verify";
 import { destroySession } from "@/lib/auth";
-import { apiUser, fail, json } from "@/lib/http";
+import { apiUser, demoReadOnly, fail, json } from "@/lib/http";
 import { DEMO_EMAIL } from "@/lib/seed";
 
 const schema = z.object({
@@ -22,6 +22,8 @@ export async function GET() {
 export async function PATCH(req: Request) {
   const user = await apiUser();
   if (user instanceof Response) return user;
+  const blocked = demoReadOnly(user);
+  if (blocked) return blocked;
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return fail(400, parsed.error.issues[0].message, { field: parsed.error.issues[0].path[0] });
   const { name, timezone } = parsed.data;
