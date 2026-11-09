@@ -160,7 +160,36 @@ Tabla clicks  →  la leen /api/links/[id]/stats y el panel
 | Cómo se cuentan los clics o qué es un bot | `src/lib/clicks.ts` |
 | Las tablas de la base de datos | `src/lib/db.ts` |
 | El correo con el código | `src/lib/mailer.ts` |
+| La recuperación de contraseña | `src/lib/password-reset.ts` |
+| Las reglas de uso aceptable | `src/app/uso-aceptable/page.tsx` |
 | Los datos de la cuenta demo | `src/lib/seed.ts` |
+
+## Pruebas y CI
+
+```bash
+npm test          # Vitest: validación, anti-SSRF, contraseñas, límites de uso, permisos, recuperación de contraseña
+npm run typecheck # tipos de TypeScript
+npm run lint      # ESLint
+```
+
+Las pruebas usan una base SQLite temporal y vacía por archivo: nunca tocan la base de producción, aunque `.env.local` tenga `DATABASE_URL`. GitHub Actions (`.github/workflows/ci.yml`) corre las tres en cada push a `main` y en cada pull request.
+
+## Migraciones de la base de datos
+
+El esquema vive en `MIGRATIONS` dentro de `src/lib/db.ts`. Al arrancar, la app aplica las que falten y las anota en la tabla `schema_migrations`.
+
+- Para cambiar el esquema, agrega una migración nueva al final con el siguiente número de versión.
+- Nunca edites una migración que ya corrió en producción.
+- Escríbelas idempotentes (`IF NOT EXISTS`): en Vercel pueden arrancar varias instancias a la vez.
+- Escribe SQL de Postgres; para SQLite se traduce solo (`toSqlite`).
+
+## Respaldos
+
+La base de producción está en Neon, que guarda el historial de cambios y permite volver a un momento anterior (point-in-time restore) dentro de la ventana de retención del plan.
+
+- **Restaurar**: Neon → proyecto → Branches → Restore, eligiendo fecha y hora. Conviene restaurar primero en una rama nueva, revisar los datos y después cambiar `DATABASE_URL`.
+- **Copia manual** antes de un cambio grande: `pg_dump "$DATABASE_URL" -Fc -f snip-AAAA-MM-DD.dump`. Guárdala fuera del repositorio: contiene correos de usuarios.
+- **Volver a cargar una copia**: `pg_restore -d "$DATABASE_URL_NUEVA" --no-owner snip-AAAA-MM-DD.dump`.
 
 ## Decisiones técnicas
 
@@ -171,6 +200,7 @@ Tabla clicks  →  la leen /api/links/[id]/stats y el panel
 - **Bots**: WhatsApp, Slack, X, rastreadores y `curl` se marcan con `is_bot` y no cuentan en las métricas.
 - **Seguridad**: solo `http`/`https`, no se acortan enlaces del propio dominio (bucles), lista de alias reservados, Safe Browsing opcional, límite de 10 enlaces/hora sin cuenta y 100 con cuenta, cada consulta filtra por `user_id`, CSV protegido contra inyección de fórmulas.
 - **Base de datos con dos motores**: el mismo SQL corre en PostgreSQL (Neon, producción) y en SQLite (local, sin configurar nada). Ver `src/lib/db.ts`.
+- **Recuperar contraseña**: enlace de un solo uso que vence en 30 minutos; solo se guarda el hash del token, la respuesta es igual exista o no la cuenta, y al cambiarla se cierran todas las sesiones.
 - **Dispositivos de confianza**: al entrar desde un navegador nuevo se envía un código de 6 dígitos al correo (10 minutos, 5 intentos, guardado como hash). En producción solo se exige si hay un servicio de correo configurado, para no dejar a nadie fuera.
 - **OAuth sin librerías de auth**: Google y GitHub con OAuth 2.0; Apple con `form_post`, secreto firmado ES256 y verificación del `id_token` contra sus llaves públicas (`jose`). Si el correo ya existe y está verificado, se vincula a la cuenta.
 

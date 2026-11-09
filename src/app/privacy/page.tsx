@@ -30,6 +30,9 @@ export default function PrivacyPage() {
         <Link href="/" className="font-semibold text-brand">
           Volver al inicio
         </Link>
+        <Link href="/uso-aceptable" className="ml-6 font-semibold text-brand">
+          Uso aceptable
+        </Link>
       </p>
     </div>
   );

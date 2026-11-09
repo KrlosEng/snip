@@ -70,3 +70,17 @@ export function codeEmail(opts: { code: string; purpose: "login" | "delete"; dev
 </table></body></html>`;
   return { subject: `${opts.code} es tu código de Snip`, text, html };
 }
+
+/** Correo con el enlace para crear una contraseña nueva. */
+export function resetEmail(opts: { link: string; when: string }) {
+  const text = `Recupera tu cuenta de Snip\n\nPediste crear una contraseña nueva. Abre este enlace (vence en 30 minutos y sirve una sola vez):\n\n${opts.link}\n\nFecha: ${opts.when}\n\nSi no fuiste tú, ignora este correo: tu contraseña no cambia.`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f1e8;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;color:#1b2130">
+<table role="presentation" width="100%" style="max-width:460px;margin:0 auto;background:#fdfbf7;border:1px solid #e3dccf;border-radius:12px">
+<tr><td style="padding:28px 28px 8px"><span style="display:inline-block;background:#d8452c;color:#fdfbf7;font-weight:700;padding:4px 10px;border-radius:6px">✂ Snip</span></td></tr>
+<tr><td style="padding:8px 28px"><h1 style="font-size:20px;margin:12px 0 8px">Crea una contraseña nueva</h1>
+<p style="margin:0;color:#4b5263;line-height:1.5">Pediste recuperar tu cuenta. El enlace vence en 30 minutos y sirve una sola vez.</p></td></tr>
+<tr><td style="padding:24px 28px"><a href="${esc(opts.link)}" style="display:inline-block;background:#d8452c;color:#fdfbf7;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:10px">Crear contraseña nueva</a></td></tr>
+<tr><td style="padding:4px 28px 28px;color:#6b7283;font-size:13px;line-height:1.5">Fecha: ${esc(opts.when)}<br><br>Si no fuiste tú, ignora este correo: tu contraseña no cambia.</td></tr>
+</table></body></html>`;
+  return { subject: "Recupera tu cuenta de Snip", text, html };
+}

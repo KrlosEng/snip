@@ -88,7 +88,35 @@ CREATE TABLE IF NOT EXISTS challenges (
 );
 `;
 
-const SCHEMA_SQLITE = SCHEMA_PG.replace(/DOUBLE PRECISION/g, "INTEGER").replace("id SERIAL PRIMARY KEY", "id INTEGER PRIMARY KEY AUTOINCREMENT");
+/**
+ * Migraciones versionadas. Cada una se aplica una sola vez y queda anotada en
+ * `schema_migrations`. Son idempotentes (IF NOT EXISTS) porque en Vercel pueden
+ * arrancar varias instancias a la vez. Para cambiar el esquema: agrega una
+ * migración nueva al final; nunca edites una que ya se aplicó en producción.
+ */
+export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
+  { version: 1, name: "esquema inicial", sql: SCHEMA_PG },
+  {
+    version: 2,
+    name: "recuperación de contraseña e índice de sesiones",
+    sql: `
+CREATE TABLE IF NOT EXISTS password_resets (
+  token_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at DOUBLE PRECISION NOT NULL,
+  used_at DOUBLE PRECISION,
+  created_at DOUBLE PRECISION NOT NULL
+);
+CREATE INDEX IF NOT EXISTS password_resets_user_idx ON password_resets(user_id);
+CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions(user_id);
+`,
+  },
+];
+
+/** Traduce el SQL de Postgres al dialecto de SQLite. */
+export function toSqlite(sql: string): string {
+  return sql.replace(/DOUBLE PRECISION/g, "INTEGER").replace(/id SERIAL PRIMARY KEY/g, "id INTEGER PRIMARY KEY AUTOINCREMENT");
+}
 
 /* ------------------------------ Motores ------------------------------ */
 
@@ -123,12 +151,23 @@ async function sqliteEngine(): Promise<Engine> {
   };
 }
 
+async function migrate(e: Engine): Promise<void> {
+  const ddl = (sql: string) => (dialect === "pg" ? sql : toSqlite(sql));
+  await e.exec(ddl("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at DOUBLE PRECISION NOT NULL)"));
+  const done = new Set((await e.all("SELECT version FROM schema_migrations", [])).map((r) => Number(r.version)));
+  for (const m of MIGRATIONS) {
+    if (done.has(m.version)) continue;
+    await e.exec(ddl(m.sql));
+    await e.all("INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?) ON CONFLICT (version) DO NOTHING", [m.version, m.name, Date.now()]);
+  }
+}
+
 const g = globalThis as unknown as { __snipEngine?: Promise<Engine> };
 
 function engine(): Promise<Engine> {
   g.__snipEngine ??= (async () => {
     const e = dialect === "pg" ? pgEngine() : await sqliteEngine();
-    await e.exec(dialect === "pg" ? SCHEMA_PG : SCHEMA_SQLITE);
+    await migrate(e);
     return e;
   })().catch((err) => {
     g.__snipEngine = undefined;

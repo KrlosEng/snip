@@ -117,6 +117,12 @@ export function AuthForm({ mode, providers, initialError }: { mode: "login" | "r
           <Field label="Correo" htmlFor="email" error={fieldError("email")}>
             <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" required invalid={Boolean(fieldError("email"))} />
           </Field>
+          <div className="relative">
+          {mode === "login" && (
+            <Link href="/forgot" className="absolute top-0 right-0 z-10 text-[13px] leading-[1.3] font-semibold text-brand underline-offset-4 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          )}
           <Field
             label="Contraseña"
             htmlFor="password"
@@ -144,6 +150,7 @@ export function AuthForm({ mode, providers, initialError }: { mode: "login" | "r
               </button>
             </div>
           </Field>
+          </div>
 
           {generalError && (
             <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2.5 text-[13px] text-danger">
@@ -154,6 +161,19 @@ export function AuthForm({ mode, providers, initialError }: { mode: "login" | "r
           <Button type="submit" size="lg" loading={busy} className="mt-1 w-full">
             {mode === "login" ? "Entrar" : "Crear cuenta"}
           </Button>
+          {mode === "register" && (
+            <p className="text-center text-[12px] leading-relaxed text-ink-3">
+              Al crear tu cuenta aceptas las reglas de{" "}
+              <Link href="/uso-aceptable" className="underline underline-offset-2 hover:text-ink">
+                uso aceptable
+              </Link>{" "}
+              y la{" "}
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-ink">
+                privacidad
+              </Link>
+              .
+            </p>
+          )}
         </form>
       </Item>
 
