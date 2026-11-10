@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getOwnLink, linkDTO } from "@/lib/links";
-import { linkStats, recentClicks, RANGES, type Range } from "@/lib/clicks";
+import { linkStats, readFilter, recentClicks, RANGES, type Range } from "@/lib/clicks";
 import { getOrigin } from "@/lib/http";
 import { DetailView } from "./view";
 
@@ -13,12 +13,17 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
   const { id } = await params;
   const link = await getOwnLink(user.id, id);
   if (!link) notFound();
-  const r = (await searchParams).range;
+  const sp = await searchParams;
+  const r = sp.range;
   const range: Range = typeof r === "string" && r in RANGES ? (r as Range) : "30d";
+  const filter = readFilter((k) => {
+    const v = sp[k];
+    return Array.isArray(v) ? v[0] : v;
+  });
   return (
     <DetailView
       link={await linkDTO(link)}
-      stats={await linkStats(link.id, range, user.timezone)}
+      stats={await linkStats(link.id, range, user.timezone, filter)}
       clicks={await recentClicks(link.id, 1)}
       origin={await getOrigin()}
       timezone={user.timezone}

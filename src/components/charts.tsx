@@ -7,9 +7,9 @@ import { CountryCode } from "./country";
 import { countryName, fmt, longDate, pct, shortDate } from "@/lib/format";
 import { cx } from "./ui";
 
-type Point = { date: string; clicks: number };
+type Point = { date: string; clicks: number; previous?: number };
 
-export function ClicksChart({ data, height = 260 }: { data: Point[]; height?: number }) {
+export function ClicksChart({ data, height = 260, compare = false }: { data: Point[]; height?: number; compare?: boolean }) {
   const every = data.length > 45 ? 14 : data.length > 20 ? 6 : 1;
   return (
     <div style={{ height }} className="w-full">
@@ -37,10 +37,25 @@ export function ClicksChart({ data, height = 260 }: { data: Point[]; height?: nu
                   <p className="mt-0.5 font-display text-lg font-semibold tnum">
                     {fmt(p.clicks)} <span className="font-sans text-xs font-normal text-ink-3">clics</span>
                   </p>
+                  {compare && p.previous !== undefined && (
+                    <p className="text-xs text-ink-3 tnum">{fmt(p.previous)} en el periodo anterior</p>
+                  )}
                 </div>
               );
             }}
           />
+          {compare && (
+            <Area
+              type="linear"
+              dataKey="previous"
+              stroke="var(--ink-3)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              fill="none"
+              activeDot={false}
+              isAnimationActive={false}
+            />
+          )}
           <Area
             type="linear"
             dataKey="clicks"
@@ -101,10 +116,15 @@ export function BarList({
   data,
   kind = "plain",
   tone = "brand",
+  onSelect,
+  selected,
 }: {
   data: { label: string; value: number }[];
   kind?: "plain" | "country" | "domain";
   tone?: "brand" | "violet" | "success";
+  /** Si se pasa, cada fila filtra las estadísticas por su valor ("Otros" no). */
+  onSelect?: (label: string) => void;
+  selected?: string | null;
 }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   const max = Math.max(1, ...data.map((d) => d.value));
@@ -112,8 +132,11 @@ export function BarList({
   const bar = tone === "violet" ? "bg-chart-2/40" : tone === "success" ? "bg-chart-3/50" : "bg-chart/15";
   return (
     <ul className="grid gap-1.5">
-      {data.map((d, i) => (
-        <li key={d.label} className="relative flex h-9 items-center gap-2.5 overflow-hidden rounded-lg px-2.5 text-sm">
+      {data.map((d, i) => {
+        const clickable = Boolean(onSelect) && d.label !== "Otros";
+        const on = selected === d.label;
+        const inner = (
+          <>
           <motion.span
             aria-hidden
             className={cx("absolute inset-y-0 left-0 w-full origin-left rounded-lg", bar)}
@@ -127,9 +150,60 @@ export function BarList({
           </span>
           <span className="relative text-ink-3 tnum">{fmt(d.value)}</span>
           <span className="relative w-11 text-right font-medium tnum">{pct(d.value, total)}</span>
-        </li>
-      ))}
+          </>
+        );
+        const row = cx("relative flex h-9 w-full items-center gap-2.5 overflow-hidden rounded-lg px-2.5 text-left text-sm", on && "ring-1 ring-brand");
+        return (
+          <li key={d.label}>
+            {clickable ? (
+              <button
+                type="button"
+                onClick={() => onSelect!(d.label)}
+                aria-pressed={on}
+                aria-label={`${kind === "country" ? countryName(d.label) : d.label}: ${fmt(d.value)} clics. ${on ? "Quitar este filtro" : "Ver solo estos clics"}`}
+                className={cx(row, "transition-[transform,box-shadow] hover:ring-1 hover:ring-line-strong active:scale-[0.99]")}
+              >
+                {inner}
+              </button>
+            ) : (
+              <div className={row}>{inner}</div>
+            )}
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+/** Columnas pequeñas (horas del día, días de la semana). */
+export function Columns({ values, labels, every = 1, unit = "clics" }: { values: number[]; labels: string[]; every?: number; unit?: string }) {
+  const max = Math.max(1, ...values);
+  const total = values.reduce((s, v) => s + v, 0);
+  if (!total) return <Empty />;
+  const top = values.indexOf(Math.max(...values));
+  return (
+    <div>
+      <div className="flex h-28 items-end gap-[3px]" role="img" aria-label={`Más clics: ${labels[top]} (${fmt(values[top])} ${unit})`}>
+        {values.map((v, i) => (
+          <motion.span
+            key={i}
+            title={`${labels[i]}: ${fmt(v)} ${unit}`}
+            className={cx("min-w-0 flex-1 origin-bottom rounded-t-[3px]", i === top ? "bg-chart" : "bg-chart/25")}
+            style={{ height: "100%" }}
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: Math.max(0.02, v / max) }}
+            transition={{ duration: 0.6, ease: EASE, delay: i * 0.01 }}
+          />
+        ))}
+      </div>
+      <div className="mt-1.5 flex gap-[3px] text-[10px] text-ink-3">
+        {labels.map((l, i) => (
+          <span key={i} className="min-w-0 flex-1 text-center tnum">
+            {i % every === 0 ? l : ""}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 

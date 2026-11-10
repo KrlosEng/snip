@@ -88,41 +88,110 @@ export function series(rows: Pick<ClickRow, "clicked_at">[], days: number, tz: s
 
 const num = (v: unknown) => Number(v ?? 0);
 
-export async function linkStats(linkId: string, range: Range, tz: string) {
+/* ---------- Filtros ---------- */
+
+export type StatsFilter = { country?: string | null; device?: string | null; browser?: string | null; referrer?: string | null };
+export const FILTER_KEYS = ["country", "device", "browser", "referrer"] as const;
+const UNKNOWN = "Desconocido";
+
+/** Lee los filtros de la URL (solo las 4 columnas permitidas, texto corto). */
+export function readFilter(get: (k: string) => string | null | undefined): StatsFilter {
+  const f: StatsFilter = {};
+  for (const k of FILTER_KEYS) {
+    const v = get(k)?.trim();
+    if (v && v.length <= 100 && v !== "Otros") f[k] = v;
+  }
+  return f;
+}
+
+/** Convierte el filtro en SQL seguro: columnas fijas y valores como parámetros. */
+export function filterSql(f: StatsFilter): { sql: string; args: string[] } {
+  const parts: string[] = [];
+  const args: string[] = [];
+  for (const k of FILTER_KEYS) {
+    const v = f[k];
+    if (!v) continue;
+    if (v === UNKNOWN) parts.push(`${k} IS NULL`);
+    else {
+      parts.push(`${k} = ?`);
+      args.push(v);
+    }
+  }
+  return { sql: parts.length ? ` AND ${parts.join(" AND ")}` : "", args };
+}
+
+/* ---------- Agregaciones ---------- */
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+/** Clics por hora local (0-23) y por día de la semana (lunes a domingo). */
+export function rhythm(rows: Pick<ClickRow, "clicked_at">[], tz: string) {
+  const hourFmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hourCycle: "h23" });
+  const dayFmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" });
+  const hours = Array<number>(24).fill(0);
+  const weekdays = Array<number>(7).fill(0);
+  for (const r of rows) {
+    hours[Number(hourFmt.format(r.clicked_at)) % 24]++;
+    const d = WEEKDAYS.indexOf(dayFmt.format(r.clicked_at));
+    if (d >= 0) weekdays[d]++;
+  }
+  return { hours, weekdays };
+}
+
+/** Serie del periodo anterior, alineada día por día con la actual. */
+export function previousSeries(rows: Pick<ClickRow, "clicked_at">[], days: number, start: number): number[] {
+  const out = Array<number>(days).fill(0);
+  for (const r of rows) {
+    const i = Math.floor((r.clicked_at - start) / 86_400_000);
+    if (i >= 0 && i < days) out[i]++;
+  }
+  return out;
+}
+
+export async function linkStats(linkId: string, range: Range, tz: string, filter: StatsFilter = {}) {
   const days = RANGES[range];
-  const since = Date.now() - (days + 1) * 86_400_000;
+  const now = Date.now();
+  const since = now - (days + 1) * 86_400_000;
+  const f = filterSql(filter);
   const rows = (
     await all<ClickRow>(
-      "SELECT clicked_at, country, device, browser, os, referrer, ip_hash FROM clicks WHERE link_id = ? AND clicked_at >= ? AND is_bot = 0",
+      `SELECT clicked_at, country, device, browser, os, referrer, ip_hash FROM clicks WHERE link_id = ? AND clicked_at >= ? AND is_bot = 0${f.sql}`,
       linkId,
       since,
+      ...f.args,
     )
   ).map((r) => ({ ...r, clicked_at: num(r.clicked_at) }));
   const s = series(rows, days, tz);
-  const inRange = rows.filter((r) => r.clicked_at >= Date.now() - days * 86_400_000);
-  const prevSince = Date.now() - 2 * days * 86_400_000;
-  const prev = num(
-    (
-      await get<{ n: number }>(
-        "SELECT CAST(COUNT(*) AS INTEGER) AS n FROM clicks WHERE link_id = ? AND clicked_at >= ? AND clicked_at < ? AND is_bot = 0",
-        linkId,
-        prevSince,
-        Date.now() - days * 86_400_000,
-      )
-    )?.n,
-  );
+  const inRange = rows.filter((r) => r.clicked_at >= now - days * 86_400_000);
+  const prevStart = now - 2 * days * 86_400_000;
+  const prevRows = (
+    await all<Pick<ClickRow, "clicked_at" | "ip_hash">>(
+      `SELECT clicked_at, ip_hash FROM clicks WHERE link_id = ? AND clicked_at >= ? AND clicked_at < ? AND is_bot = 0${f.sql}`,
+      linkId,
+      prevStart,
+      now - days * 86_400_000,
+      ...f.args,
+    )
+  ).map((r) => ({ ...r, clicked_at: num(r.clicked_at) }));
+  const prev = prevRows.length;
+  // Cubetas de 24 h desde el inicio del periodo anterior: la última se compara con "hoy".
+  const prevSeries = previousSeries(prevRows, days, prevStart);
   const bots = num(
     (await get<{ n: number }>("SELECT CAST(COUNT(*) AS INTEGER) AS n FROM clicks WHERE link_id = ? AND clicked_at >= ? AND is_bot = 1", linkId, since))?.n,
   );
   const peak = s.reduce((a, b) => (b.clicks > a.clicks ? b : a), s[0]);
   return {
     range,
+    filter,
     total: inRange.length,
     previous: prev,
     unique: new Set(inRange.map((r) => r.ip_hash)).size,
+    previousUnique: new Set(prevRows.map((r) => r.ip_hash)).size,
     bots,
     peak,
-    series: s,
+    series: s.map((p, i) => ({ ...p, previous: prevSeries[i] ?? 0 })),
+    ...rhythm(inRange, tz),
     countries: tally(inRange, (r) => r.country, 5),
     devices: tally(inRange, (r) => r.device, 3),
     browsers: tally(inRange, (r) => r.browser, 4),
