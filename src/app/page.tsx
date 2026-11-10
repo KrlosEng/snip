@@ -187,6 +187,9 @@ export default async function Home() {
                 <Link href="/uso-aceptable" className="transition-colors hover:text-white">Uso aceptable</Link>
               </li>
               <li>
+                <Link href="/docs/api" className="transition-colors hover:text-white">API</Link>
+              </li>
+              <li>
                 <a href="https://github.com/KrlosEng/snip" className="transition-colors hover:text-white">GitHub</a>
               </li>
             </ul>

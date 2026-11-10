@@ -137,6 +137,23 @@ ALTER TABLE links ADD COLUMN IF NOT EXISTS notify_at INTEGER;
 ALTER TABLE links ADD COLUMN IF NOT EXISTS notified_at DOUBLE PRECISION;
 `,
   },
+  {
+    version: 5,
+    name: "claves de API",
+    sql: `
+CREATE TABLE IF NOT EXISTS api_keys (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  prefix TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  created_at DOUBLE PRECISION NOT NULL,
+  last_used_at DOUBLE PRECISION,
+  revoked_at DOUBLE PRECISION
+);
+CREATE INDEX IF NOT EXISTS api_keys_user_idx ON api_keys(user_id);
+`,
+  },
 ];
 
 /** Traduce el SQL de Postgres al dialecto de SQLite. */

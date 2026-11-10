@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Palabras que no pueden usarse como alias porque chocan con rutas de la app. */
 export const RESERVED_SLUGS = new Set([
-  "api", "login", "register", "logout", "dashboard", "links", "settings", "privacy", "uso-aceptable", "forgot", "reset",
+  "api", "login", "register", "logout", "dashboard", "links", "settings", "privacy", "uso-aceptable", "forgot", "reset", "docs",
   "admin", "auth", "app", "help", "demo", "static", "_next", "favicon.ico",
   "robots.txt", "sitemap.xml", "snip", "about", "terms", "signup", "signin",
   // alias de la cuenta demo

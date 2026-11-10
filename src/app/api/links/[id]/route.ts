@@ -1,6 +1,6 @@
 import { apiUser, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
-import { deleteLink, getOwnLink, linkDTO, slugExists, updateLink } from "@/lib/links";
-import { checkDestination, parseAccess, parseExpiry, updateLinkSchema } from "@/lib/validation";
+import { deleteLink, getOwnLink, linkDTO } from "@/lib/links";
+import { updateFromInput } from "@/lib/link-create";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/links/[id]">) {
   const user = await apiUser();
@@ -16,42 +16,9 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) 
   if (blocked) return blocked;
   const link = await getOwnLink(user.id, (await ctx.params).id);
   if (!link) return fail(404, "No encontramos ese enlace.");
-
-  const parsed = updateLinkSchema.safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    return fail(400, issue.message, { field: issue.path[0] });
-  }
-  const p = parsed.data;
-  const patch: Parameters<typeof updateLink>[1] = {};
-  if (p.url !== undefined) {
-    const dest = checkDestination(p.url, await ownHosts());
-    if (!dest.ok) return fail(400, dest.error, { field: "url" });
-    patch.url = dest.url;
-  }
-  if (p.alias !== undefined && p.alias !== link.slug) {
-    if (await slugExists(p.alias)) return fail(409, "Ese alias ya está ocupado. Prueba otra variante.", { field: "alias" });
-    patch.slug = p.alias;
-  }
-  if (p.expiresAt !== undefined) {
-    if (p.expiresAt === null || p.expiresAt === "") {
-      patch.expiresAt = null;
-    } else {
-      const exp = parseExpiry(p.expiresAt);
-      if (!exp.ok) return fail(400, exp.error, { field: "expiresAt" });
-      patch.expiresAt = exp.at;
-    }
-  }
-  if (p.isActive !== undefined) patch.isActive = p.isActive;
-  if (p.title !== undefined) patch.title = p.title?.trim() || null;
-  if (p.folder !== undefined) patch.folder = p.folder;
-  if (p.tags !== undefined) patch.tags = p.tags;
-  if (p.access) {
-    const a = parseAccess(p.access, patch.expiresAt !== undefined ? patch.expiresAt : link.expires_at);
-    if (!a.ok) return fail(400, a.error, { field: a.field });
-    patch.access = a.patch;
-  }
-  return json({ link: await linkDTO(await updateLink(link, patch)) });
+  const r = await updateFromInput(link, await req.json().catch(() => ({})), await ownHosts());
+  if (!r.ok) return fail(r.status, r.error, r.field ? { field: r.field } : undefined);
+  return json({ link: await linkDTO(r.value) });
 }
 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/links/[id]">) {

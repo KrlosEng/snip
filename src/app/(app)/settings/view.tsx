@@ -9,6 +9,7 @@ import { EASE, Item, Stagger } from "@/components/motion";
 import { useToast } from "@/components/providers";
 import { applyTheme, currentTheme, type Theme } from "@/components/theme";
 import type { PublicUser } from "@/lib/auth";
+import { ApiKeys } from "@/components/api-keys";
 
 type DeleteMethod = "password" | "code" | "email";
 
@@ -108,6 +109,13 @@ export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: 
         <div className="p-5 sm:p-6">
           <ThemePicker />
         </div>
+      </Item>
+
+      <Item as="section" className="rounded-xl border border-line bg-surface">
+        <div className="border-b border-line px-5 py-4 sm:px-6">
+          <h2 className="text-base font-semibold">Claves de API</h2>
+        </div>
+        <ApiKeys isDemo={isDemo} />
       </Item>
 
       <Item as="section" className="rounded-xl border border-line bg-surface">
