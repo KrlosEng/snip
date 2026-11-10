@@ -1,10 +1,11 @@
 import "server-only";
 import { all, get, run, type LinkRow } from "./db";
-import { randomSlug, uuid } from "./ids";
+import { hashPassword, randomSlug, uuid } from "./ids";
 import { cacheDelete } from "./cache";
 import { safeFetch } from "./net-guard";
+import { blockedReason } from "./access";
 
-export type LinkStatus = "active" | "paused" | "expired";
+export type LinkStatus = "active" | "paused" | "expired" | "scheduled";
 
 export type LinkDTO = {
   id: string;
@@ -19,10 +20,20 @@ export type LinkDTO = {
   updatedAt: number;
   folder: string | null;
   tags: string[];
+  /** Pide contraseña (el hash nunca sale del servidor). */
+  protected: boolean;
+  startsAt: number | null;
+  maxClicks: number | null;
+  notifyAt: number | null;
 };
 
-export function statusOf(l: Pick<LinkRow, "is_active" | "expires_at">): LinkStatus {
-  if (l.expires_at && l.expires_at <= Date.now()) return "expired";
+export function statusOf(l: Pick<LinkRow, "is_active" | "expires_at" | "starts_at" | "max_clicks" | "click_count">): LinkStatus {
+  const r = blockedReason(
+    { active: Boolean(Number(l.is_active)), expiresAt: l.expires_at ?? null, startsAt: l.starts_at ?? null, maxClicks: l.max_clicks ?? null },
+    Number(l.click_count ?? 0),
+  );
+  if (r === "expired" || r === "limit") return "expired";
+  if (r === "scheduled") return "scheduled";
   return l.is_active ? "active" : "paused";
 }
 
@@ -36,6 +47,9 @@ export function normalize(l: LinkRow): LinkRow {
     created_at: Number(l.created_at),
     updated_at: Number(l.updated_at),
     folder: l.folder ?? null,
+    starts_at: l.starts_at == null ? null : Number(l.starts_at),
+    max_clicks: l.max_clicks == null ? null : Number(l.max_clicks),
+    notify_at: l.notify_at == null ? null : Number(l.notify_at),
   };
 }
 
@@ -54,6 +68,37 @@ export function toDTO(raw: LinkRow, tags: string[] = []): LinkDTO {
     updatedAt: l.updated_at,
     folder: l.folder ?? null,
     tags,
+    protected: Boolean(l.password_hash),
+    startsAt: l.starts_at ?? null,
+    maxClicks: l.max_clicks ?? null,
+    notifyAt: l.notify_at ?? null,
+  };
+}
+
+/* ---------- Controles de acceso ---------- */
+
+/**
+ * Cambios de acceso. undefined = no tocar; null = quitar.
+ * password llega en claro y se guarda solo como hash.
+ */
+export type AccessPatch = {
+  password?: string | null;
+  startsAt?: number | null;
+  maxClicks?: number | null;
+  notifyAt?: number | null;
+};
+
+type AccessCols = Pick<LinkRow, "password_hash" | "starts_at" | "max_clicks" | "notify_at" | "notified_at">;
+
+export function accessColumns(p: AccessPatch, cur: Partial<AccessCols>): AccessCols {
+  const notifyAt = p.notifyAt !== undefined ? p.notifyAt : (cur.notify_at ?? null);
+  return {
+    password_hash: p.password === undefined ? (cur.password_hash ?? null) : p.password ? hashPassword(p.password) : null,
+    starts_at: p.startsAt !== undefined ? p.startsAt : (cur.starts_at ?? null),
+    max_clicks: p.maxClicks !== undefined ? p.maxClicks : (cur.max_clicks ?? null),
+    notify_at: notifyAt,
+    // Si cambia la meta del aviso, se puede volver a avisar.
+    notified_at: p.notifyAt !== undefined && p.notifyAt !== (cur.notify_at ?? null) ? null : (cur.notified_at ?? null),
   };
 }
 
@@ -128,6 +173,7 @@ export async function createLink(input: {
   title?: string | null;
   folder?: string | null;
   tags?: string[];
+  access?: AccessPatch;
 }): Promise<LinkRow> {
   const now = Date.now();
   const row: LinkRow = {
@@ -142,11 +188,14 @@ export async function createLink(input: {
     created_at: now,
     updated_at: now,
     folder: input.userId ? (input.folder ?? null) : null,
+    ...(input.userId ? accessColumns(input.access ?? {}, {}) : {}),
   };
   await run(
-    `INSERT INTO links (id, user_id, slug, destination_url, title, is_active, expires_at, click_count, created_at, updated_at, folder)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO links (id, user_id, slug, destination_url, title, is_active, expires_at, click_count, created_at, updated_at, folder,
+                        password_hash, starts_at, max_clicks, notify_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     row.id, row.user_id, row.slug, row.destination_url, row.title, row.is_active, row.expires_at, 0, now, now, row.folder ?? null,
+    row.password_hash ?? null, row.starts_at ?? null, row.max_clicks ?? null, row.notify_at ?? null,
   );
   if (input.userId && input.tags?.length) await setTags(row.id, input.userId, input.tags);
   return row;
@@ -209,7 +258,16 @@ export async function listLinks(userId: string, p: ListParams) {
 
 export async function updateLink(
   link: LinkRow,
-  patch: { url?: string; slug?: string; expiresAt?: number | null; isActive?: boolean; title?: string | null; folder?: string | null; tags?: string[] },
+  patch: {
+    url?: string;
+    slug?: string;
+    expiresAt?: number | null;
+    isActive?: boolean;
+    title?: string | null;
+    folder?: string | null;
+    tags?: string[];
+    access?: AccessPatch;
+  },
 ): Promise<LinkRow> {
   const next: LinkRow = {
     ...link,
@@ -219,11 +277,15 @@ export async function updateLink(
     is_active: patch.isActive !== undefined ? (patch.isActive ? 1 : 0) : link.is_active,
     title: patch.title !== undefined ? patch.title : link.title,
     folder: patch.folder !== undefined ? patch.folder : (link.folder ?? null),
+    ...accessColumns(patch.access ?? {}, link),
     updated_at: Date.now(),
   };
   await run(
-    `UPDATE links SET destination_url = ?, slug = ?, expires_at = ?, is_active = ?, title = ?, folder = ?, updated_at = ? WHERE id = ?`,
-    next.destination_url, next.slug, next.expires_at, next.is_active, next.title, next.folder ?? null, next.updated_at, link.id,
+    `UPDATE links SET destination_url = ?, slug = ?, expires_at = ?, is_active = ?, title = ?, folder = ?,
+            password_hash = ?, starts_at = ?, max_clicks = ?, notify_at = ?, notified_at = ?, updated_at = ? WHERE id = ?`,
+    next.destination_url, next.slug, next.expires_at, next.is_active, next.title, next.folder ?? null,
+    next.password_hash ?? null, next.starts_at ?? null, next.max_clicks ?? null, next.notify_at ?? null, next.notified_at ?? null,
+    next.updated_at, link.id,
   );
   if (patch.tags !== undefined && link.user_id) await setTags(link.id, link.user_id, patch.tags);
   await cacheDelete(link.slug, next.slug);

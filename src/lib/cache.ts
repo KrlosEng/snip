@@ -12,6 +12,10 @@ export type CachedLink = {
   url: string;
   active: boolean;
   expiresAt: number | null;
+  startsAt?: number | null;
+  maxClicks?: number | null;
+  /** Tiene contraseña (el hash nunca se guarda en caché). */
+  protected?: boolean;
 };
 
 const TTL_SECONDS = 300;

@@ -72,6 +72,12 @@ function LinkDialog({
   const [utm, setUtm] = useState<Utm>(() => readUtm(editing?.url ?? ""));
   const [showUtm, setShowUtm] = useState(() => hasUtm(readUtm(editing?.url ?? "")));
   const [facets, setFacets] = useState<Facets>({ folders: [], tags: [] });
+  const [showAccess, setShowAccess] = useState(Boolean(editing && (editing.protected || editing.startsAt || editing.maxClicks || editing.notifyAt)));
+  const [pw, setPw] = useState("");
+  const [removePw, setRemovePw] = useState(false);
+  const [startsAt, setStartsAt] = useState(toLocalInput(editing?.startsAt ?? null));
+  const [maxClicks, setMaxClicks] = useState(editing?.maxClicks ? String(editing.maxClicks) : "");
+  const [notifyAt, setNotifyAt] = useState(editing?.notifyAt ? String(editing.notifyAt) : "");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<LinkDTO | null>(null);
@@ -135,6 +141,10 @@ function LinkDialog({
     const errs: Record<string, string> = {};
     if (!url.trim()) errs.url = "Pega el enlace de destino.";
     if (alias && !/^[a-zA-Z0-9-]{3,32}$/.test(alias)) errs.alias = "Usa de 3 a 32 letras, números o guiones.";
+    if (pw && pw.length < 4) errs.password = "Usa al menos 4 caracteres.";
+    for (const [k, v] of [["maxClicks", maxClicks], ["notifyAt", notifyAt]] as const) {
+      if (v && !/^[1-9][0-9]{0,7}$/.test(v.trim())) errs[k] = "Escribe un número entero mayor que 0.";
+    }
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
@@ -142,7 +152,13 @@ function LinkDialog({
     setBusy(true);
     setErrors({});
     const expiresAt = advanced && expires ? new Date(expires).toISOString() : null;
-    const extra = { title: title.trim() || null, folder: folder.trim() || null, tags: tagList };
+    const access = {
+      ...(pw ? { password: pw } : removePw ? { password: null } : {}),
+      startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+      maxClicks: maxClicks ? Number(maxClicks) : null,
+      notifyAt: notifyAt ? Number(notifyAt) : null,
+    };
+    const extra = { title: title.trim() || null, folder: folder.trim() || null, tags: tagList, access };
     const body = editing
       ? { url: finalUrl, alias: alias || editing.slug, expiresAt, ...extra }
       : { url: finalUrl, alias: alias || null, expiresAt, ...extra };
@@ -383,6 +399,79 @@ function LinkDialog({
                         tabIndex={advanced ? 0 : -1}
                       />
                       <FieldMessage error={errors.expiresAt} hint="Después de esta fecha, el enlace muestra una página de “enlace vencido”." />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowAccess((s) => !s)}
+                  aria-expanded={showAccess}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink"
+                >
+                  <motion.span animate={{ rotate: showAccess ? 180 : 0 }} transition={{ duration: 0.25, ease: EASE }}>
+                    <ChevronDown className="size-4" />
+                  </motion.span>
+                  Acceso: contraseña, inicio, límite y aviso
+                </button>
+                <div className={cx("grid transition-[grid-template-rows] duration-300 ease-out", showAccess ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+                  <div className="overflow-hidden">
+                    <div className="grid gap-4 pt-3 sm:grid-cols-2">
+                      <div className="grid gap-1.5 sm:col-span-2">
+                        <label htmlFor="link-pw" className="text-[13px] font-medium text-ink">
+                          Contraseña del enlace <span className="font-normal text-ink-3">(opcional)</span>
+                        </label>
+                        <Input
+                          id="link-pw"
+                          type="password"
+                          value={pw}
+                          onChange={(e) => {
+                            setPw(e.target.value);
+                            if (e.target.value) setRemovePw(false);
+                          }}
+                          placeholder={editing?.protected && !removePw ? "Escribe una nueva para cambiarla" : "Sin contraseña"}
+                          autoComplete="new-password"
+                          maxLength={100}
+                          invalid={Boolean(errors.password)}
+                          tabIndex={showAccess ? 0 : -1}
+                        />
+                        <FieldMessage error={errors.password} hint="Quien abra el enlace tendrá que escribirla. No la ves después: guárdala tú." />
+                        {editing?.protected && (
+                          <label className="inline-flex items-center gap-2 text-[13px] text-ink-2">
+                            <input type="checkbox" checked={removePw} onChange={(e) => setRemovePw(e.target.checked)} disabled={Boolean(pw)} tabIndex={showAccess ? 0 : -1} />
+                            Quitar la contraseña
+                          </label>
+                        )}
+                      </div>
+                      <div className="grid gap-1.5">
+                        <label htmlFor="starts" className="text-[13px] font-medium text-ink">
+                          Empieza a funcionar
+                        </label>
+                        <Input id="starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} invalid={Boolean(errors.startsAt)} tabIndex={showAccess ? 0 : -1} />
+                        <FieldMessage error={errors.startsAt} hint="Antes de esa fecha mostrará “todavía no disponible”." />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <label htmlFor="max-clicks" className="text-[13px] font-medium text-ink">
+                          Vence tras
+                        </label>
+                        <div className="relative">
+                          <Input id="max-clicks" inputMode="numeric" value={maxClicks} onChange={(e) => setMaxClicks(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Sin límite" invalid={Boolean(errors.maxClicks)} className="pr-12" tabIndex={showAccess ? 0 : -1} />
+                          <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-[13px] text-ink-3">clics</span>
+                        </div>
+                        <FieldMessage error={errors.maxClicks} hint="Al llegar a ese número deja de redirigir." />
+                      </div>
+                      <div className="grid gap-1.5 sm:col-span-2">
+                        <label htmlFor="notify-at" className="text-[13px] font-medium text-ink">
+                          Avisarme por correo al llegar a
+                        </label>
+                        <div className="relative sm:max-w-[50%]">
+                          <Input id="notify-at" inputMode="numeric" value={notifyAt} onChange={(e) => setNotifyAt(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Sin aviso" invalid={Boolean(errors.notifyAt)} className="pr-12" tabIndex={showAccess ? 0 : -1} />
+                          <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-[13px] text-ink-3">clics</span>
+                        </div>
+                        <FieldMessage error={errors.notifyAt ?? errors.access} hint="Te llega un correo una sola vez, cuando alcance esa cifra." />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -74,6 +74,7 @@ export const createLinkSchema = z.object({
   title: z.union([z.string().max(200), z.null()]).optional(),
   folder: folderSchema.optional(),
   tags: tagsSchema.optional(),
+  access: z.lazy(() => accessSchema).optional(),
 });
 
 export const updateLinkSchema = z.object({
@@ -84,7 +85,41 @@ export const updateLinkSchema = z.object({
   title: z.union([z.string().max(200), z.null()]).optional(),
   folder: folderSchema.optional(),
   tags: tagsSchema.optional(),
+  access: z.lazy(() => accessSchema).optional(),
 });
+
+/* ---------- Controles de acceso ---------- */
+
+const count = z.union([z.number().int("Usa un número entero.").min(1, "Debe ser al menos 1.").max(10_000_000, "Ese número es demasiado grande."), z.null()]);
+
+export const accessSchema = z.object({
+  /** "" o null quita la contraseña; undefined la deja como está. */
+  password: z.union([z.string().min(4, "La contraseña del enlace necesita al menos 4 caracteres.").max(100), z.literal(""), z.null()]).optional(),
+  startsAt: z.union([z.string(), z.null()]).optional(),
+  maxClicks: count.optional(),
+  notifyAt: count.optional(),
+});
+
+export type AccessInput = z.infer<typeof accessSchema>;
+type AccessOut = { password?: string | null; startsAt?: number | null; maxClicks?: number | null; notifyAt?: number | null };
+
+/** Convierte lo que llega del formulario a un AccessPatch validado. */
+export function parseAccess(a: AccessInput, expiresAt: number | null): { ok: true; patch: AccessOut } | { ok: false; error: string; field: string } {
+  const patch: AccessOut = {};
+  if (a.password !== undefined) patch.password = a.password || null;
+  if (a.startsAt !== undefined) {
+    if (!a.startsAt) patch.startsAt = null;
+    else {
+      const t = Date.parse(a.startsAt);
+      if (Number.isNaN(t)) return { ok: false, error: "La fecha de inicio no es válida.", field: "startsAt" };
+      if (expiresAt && t >= expiresAt) return { ok: false, error: "El enlace debe empezar antes de vencer.", field: "startsAt" };
+      patch.startsAt = t;
+    }
+  }
+  if (a.maxClicks !== undefined) patch.maxClicks = a.maxClicks;
+  if (a.notifyAt !== undefined) patch.notifyAt = a.notifyAt;
+  return { ok: true, patch };
+}
 
 export function parseExpiry(value: string | null | undefined): { ok: true; at: number | null } | { ok: false; error: string } {
   if (value === undefined || value === null || value === "") return { ok: true, at: null };

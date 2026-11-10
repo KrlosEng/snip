@@ -2,6 +2,7 @@ import "server-only";
 import { UAParser } from "ua-parser-js";
 import { all, get, run, type ClickRow } from "./db";
 import { hashIp } from "./ids";
+import { milestoneEmail, sendMail } from "./mailer";
 
 const BOT_RE =
   /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|slack|discord|twitter|linkedin|embedly|quora|pinterest|vkshare|skype|bingpreview|headless|curl|wget|python-requests|httpclient|go-http/i;
@@ -42,7 +43,30 @@ export async function recordClick(linkId: string, h: Headers, ip: string): Promi
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     linkId, Date.now(), country, city, device, browser, os, referrerDomain(h.get("referer")), hashIp(ip), bot ? 1 : 0,
   );
-  if (!bot) await run("UPDATE links SET click_count = click_count + 1 WHERE id = ?", linkId);
+  if (bot) return;
+  const r = await get<{ click_count: number; notify_at: number | null; notified_at: number | null }>(
+    "UPDATE links SET click_count = click_count + 1 WHERE id = ? RETURNING click_count, notify_at, notified_at",
+    linkId,
+  );
+  if (r?.notify_at && r.notified_at == null && Number(r.click_count) >= Number(r.notify_at)) await notifyMilestone(linkId);
+}
+
+/** Avisa por correo al dueño cuando el enlace llega a su meta de clics (una sola vez). */
+export async function notifyMilestone(linkId: string): Promise<boolean> {
+  // Se marca antes de enviar: si llegan dos clics a la vez, solo uno manda el correo.
+  const claimed = await get<{ slug: string; notify_at: number; user_id: string | null; title: string | null }>(
+    "UPDATE links SET notified_at = ? WHERE id = ? AND notified_at IS NULL AND notify_at IS NOT NULL RETURNING slug, notify_at, user_id, title",
+    Date.now(),
+    linkId,
+  );
+  if (!claimed?.user_id) return false;
+  const owner = await get<{ email: string; name: string }>("SELECT email, name FROM users WHERE id = ?", claimed.user_id);
+  if (!owner) return false;
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "";
+  return sendMail({
+    to: owner.email,
+    ...milestoneEmail({ name: owner.name, slug: claimed.slug, title: claimed.title, count: Number(claimed.notify_at), url: host ? `${host}/links/${linkId}` : null }),
+  });
 }
 
 /* ------------------------------ Analíticas ------------------------------ */

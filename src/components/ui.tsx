@@ -220,11 +220,12 @@ export function Switch({
 
 /* ------------------------------ Badges ------------------------------ */
 
-export function StatusBadge({ status }: { status: "active" | "paused" | "expired" }) {
+export function StatusBadge({ status }: { status: "active" | "paused" | "expired" | "scheduled" }) {
   const map = {
     active: { label: "Activo", cls: "bg-success-soft text-success" },
     paused: { label: "Pausado", cls: "bg-surface-2 text-ink-2" },
     expired: { label: "Vencido", cls: "bg-danger-soft text-danger" },
+    scheduled: { label: "Programado", cls: "bg-warn-soft text-warn" },
   } as const;
   const m = map[status];
   return (

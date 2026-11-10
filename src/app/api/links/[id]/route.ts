@@ -1,6 +1,6 @@
 import { apiUser, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
 import { deleteLink, getOwnLink, linkDTO, slugExists, updateLink } from "@/lib/links";
-import { checkDestination, parseExpiry, updateLinkSchema } from "@/lib/validation";
+import { checkDestination, parseAccess, parseExpiry, updateLinkSchema } from "@/lib/validation";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/links/[id]">) {
   const user = await apiUser();
@@ -46,6 +46,11 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) 
   if (p.title !== undefined) patch.title = p.title?.trim() || null;
   if (p.folder !== undefined) patch.folder = p.folder;
   if (p.tags !== undefined) patch.tags = p.tags;
+  if (p.access) {
+    const a = parseAccess(p.access, patch.expiresAt !== undefined ? patch.expiresAt : link.expires_at);
+    if (!a.ok) return fail(400, a.error, { field: a.field });
+    patch.access = a.patch;
+  }
   return json({ link: await linkDTO(await updateLink(link, patch)) });
 }
 

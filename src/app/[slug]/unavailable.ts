@@ -4,7 +4,7 @@
  * HTTP correcto en la misma URL del enlace corto. Sin JavaScript.
  */
 
-type Reason = "missing" | "invalid" | "expired" | "paused";
+type Reason = "missing" | "invalid" | "expired" | "paused" | "scheduled" | "limit" | "locked";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -33,16 +33,61 @@ const COPY: Record<Reason, { badge: string; title: string; body: string; reason:
     body: "Quien lo creó lo desactivó por ahora. Puede volver a funcionar más adelante.",
     reason: "El creador desactivó este enlace.",
   },
+  scheduled: {
+    badge: "Todavía no disponible",
+    title: "Este enlace aún no abre.",
+    body: "Quien lo creó lo programó para que empiece a funcionar más adelante. Vuelve a intentarlo en la fecha indicada.",
+    reason: "",
+  },
+  limit: {
+    badge: "Límite alcanzado",
+    title: "Este enlace ya llegó a su límite.",
+    body: "Quien lo creó decidió que solo funcionara un número de veces, y ya se usaron todas. Si lo necesitas, pídele uno nuevo.",
+    reason: "Se alcanzó el número máximo de visitas.",
+  },
+  locked: {
+    badge: "Enlace protegido",
+    title: "Este enlace pide contraseña.",
+    body: "Quien lo creó lo protegió. Escribe la contraseña que te compartió para continuar.",
+    reason: "Protegido con contraseña.",
+  },
 };
 
-export function unavailablePage(p: { origin: string; slug: string; status: 404 | 410; reason: Reason; expiresAt?: number }): string {
+const STATUS_TEXT: Record<number, string> = { 401: "401 UNAUTHORIZED", 403: "403 FORBIDDEN", 404: "404 NOT FOUND", 410: "410 GONE", 429: "429 TOO MANY" };
+
+export function unavailablePage(p: {
+  origin: string;
+  slug: string;
+  status: 401 | 403 | 404 | 410 | 429;
+  reason: Reason;
+  expiresAt?: number;
+  startsAt?: number;
+  error?: string;
+}): string {
   const c = COPY[p.reason];
   const host = p.origin.replace(/^https?:\/\//, "");
+  const day = (ms: number) => new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeStyle: "short", timeZone: "America/Mexico_City" }).format(ms);
   const reason =
     p.reason === "expired" && p.expiresAt
       ? `Venció el ${new Intl.DateTimeFormat("es-MX", { dateStyle: "long", timeZone: "UTC" }).format(p.expiresAt)}.`
-      : c.reason;
-  const statusText = p.status === 410 ? "410 GONE" : "404 NOT FOUND";
+      : p.reason === "scheduled" && p.startsAt
+        ? `Empieza a funcionar el ${day(p.startsAt)} (hora del centro de México).`
+        : c.reason;
+  const statusText = STATUS_TEXT[p.status];
+  const actions =
+    p.reason === "locked"
+      ? `<form class="unlock rise d4" method="post" action="/${encodeURIComponent(p.slug)}">
+    <label class="k" for="pw">Contraseña</label>
+    <div class="row">
+      <input id="pw" name="password" type="password" required maxlength="200" autocomplete="off" autofocus${p.error ? ' aria-invalid="true" aria-describedby="pw-err"' : ""}>
+      <button class="btn primary" type="submit">Abrir enlace</button>
+    </div>
+    ${p.error ? `<p class="err" id="pw-err" role="alert">${esc(p.error)}</p>` : ""}
+  </form>`
+      : `<div class="actions rise d4">
+    <a class="btn primary" href="/">Crear un enlace gratis</a>
+    <a class="btn ghost" href="/login">Entrar a mi cuenta</a>
+  </div>`;
 
   return `<!doctype html>
 <html lang="es">
@@ -100,6 +145,12 @@ p.lead{color:var(--ink);font-weight:200;font-size:18px;max-width:46ch;text-wrap:
 .ghost{background:transparent;color:var(--ink-3)}
 .ghost:hover{color:var(--ink)}
 .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.unlock{display:grid;gap:8px}
+.unlock .row{display:flex;flex-wrap:wrap;gap:10px}
+.unlock input{flex:1 1 200px;min-width:0;height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--ink-3);background:transparent;color:inherit;font:400 16px/1 "Inter",system-ui}
+.unlock input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+.unlock input[aria-invalid="true"]{border-color:var(--danger)}
+.err{margin:0;font-size:14px;color:var(--danger)}
 footer{padding:24px;text-align:center;font-size:13px;color:var(--ink-3)}
 footer a{text-underline-offset:3px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -125,10 +176,7 @@ footer a{text-underline-offset:3px}
       <div><div class="k">Motivo</div><div>${esc(reason)}</div></div>
     </div>
   </section>
-  <div class="actions rise d4">
-    <a class="btn primary" href="/">Crear un enlace gratis</a>
-    <a class="btn ghost" href="/login">Entrar a mi cuenta</a>
-  </div>
+  ${actions}
 </div></main>
 <footer><a href="/privacy">Privacidad</a></footer>
 </body>

@@ -84,3 +84,22 @@ export function resetEmail(opts: { link: string; when: string }) {
 </table></body></html>`;
   return { subject: "Recupera tu cuenta de Snip", text, html };
 }
+
+/** Aviso cuando un enlace llega a la meta de clics que eligió su dueño. */
+export function milestoneEmail(o: { name: string; slug: string; title: string | null; count: number; url: string | null }) {
+  const n = new Intl.NumberFormat("es-MX").format(o.count);
+  const what = o.title ? `${o.title} (/${o.slug})` : `/${o.slug}`;
+  const text = `Hola, ${o.name}:\n\nTu enlace ${what} llegó a ${n} clics.${o.url ? `\n\nVer sus estadísticas: ${o.url}` : ""}\n\nTe avisamos porque pediste este aviso al crear o editar el enlace.`;
+  const button = o.url
+    ? `<tr><td style="padding:16px 28px 8px"><a href="${esc(o.url)}" style="display:inline-block;background:#d8452c;color:#fdfbf7;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:10px">Ver estadísticas</a></td></tr>`
+    : "";
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f1e8;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;color:#1b2130">
+<table role="presentation" width="100%" style="max-width:460px;margin:0 auto;background:#fdfbf7;border:1px solid #e3dccf;border-radius:12px">
+<tr><td style="padding:28px 28px 8px"><span style="display:inline-block;background:#d8452c;color:#fdfbf7;font-weight:700;padding:4px 10px;border-radius:6px">✂ Snip</span></td></tr>
+<tr><td style="padding:8px 28px"><h1 style="font-size:20px;margin:12px 0 8px">¡${esc(n)} clics!</h1>
+<p style="margin:0;color:#4b5263;line-height:1.5">Hola, ${esc(o.name)}. Tu enlace <b>${esc(what)}</b> llegó a la meta que elegiste.</p></td></tr>
+${button}
+<tr><td style="padding:12px 28px 28px;color:#6b7283;font-size:13px;line-height:1.5">Te avisamos porque pediste este aviso al crear o editar el enlace.</td></tr>
+</table></body></html>`;
+  return { subject: `Tu enlace /${o.slug} llegó a ${n} clics`, text, html };
+}

@@ -4,7 +4,8 @@ import { rateLimit } from "@/lib/cache";
 import { apiUser, clientIp, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
 import { createLink, fetchTitle, isUnsafe, linkDTO, listLinks, slugExists, updateLink } from "@/lib/links";
 import { get, type LinkRow } from "@/lib/db";
-import { checkDestination, createLinkSchema, parseExpiry } from "@/lib/validation";
+import { checkDestination, createLinkSchema, parseAccess, parseExpiry } from "@/lib/validation";
+import type { AccessPatch } from "@/lib/links";
 
 const ANON_DAYS = 7;
 
@@ -63,6 +64,13 @@ export async function POST(req: Request) {
     expiresAt = Date.now() + ANON_DAYS * 86_400_000;
   }
 
+  let access: AccessPatch | undefined;
+  if (user && parsed.data.access) {
+    const a = parseAccess(parsed.data.access, expiresAt);
+    if (!a.ok) return fail(400, a.error, { field: a.field });
+    access = a.patch;
+  }
+
   if (await isUnsafe(dest.url)) return fail(422, "Google marcó ese sitio como peligroso. No podemos acortarlo.", { field: "url" });
 
   let link: LinkRow;
@@ -75,6 +83,7 @@ export async function POST(req: Request) {
       title: user ? parsed.data.title : null,
       folder: parsed.data.folder,
       tags: parsed.data.tags,
+      access,
     });
   } catch {
     return fail(409, "Ese alias acaba de ser ocupado. Prueba otro.", { field: "alias" });

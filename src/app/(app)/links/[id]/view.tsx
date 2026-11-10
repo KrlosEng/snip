@@ -130,6 +130,18 @@ export function DetailView({
                 {link.status === "expired" ? "Venció" : "Vence"} el {dateTime(link.expiresAt, timezone)}
               </span>
             )}
+            {link.startsAt && (
+              <span className="text-xs text-ink-3">
+                {link.status === "scheduled" ? "Empieza" : "Empezó"} el {dateTime(link.startsAt, timezone)}
+              </span>
+            )}
+            {link.protected && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink-2">Con contraseña</span>}
+            {link.maxClicks && (
+              <span className="text-xs text-ink-3 tnum">
+                {fmt(link.clicks)} de {fmt(link.maxClicks)} clics permitidos
+              </span>
+            )}
+            {link.notifyAt && <span className="text-xs text-ink-3 tnum">Aviso por correo a los {fmt(link.notifyAt)} clics</span>}
           </div>
           <h1 className="flex flex-wrap items-center gap-x-2 font-mono text-[clamp(1.25rem,2.6vw,1.75rem)] leading-tight font-medium tracking-tight">
             <span className="min-w-0 break-all">

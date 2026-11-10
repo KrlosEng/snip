@@ -126,6 +126,17 @@ CREATE TABLE IF NOT EXISTS link_tags (
 CREATE INDEX IF NOT EXISTS link_tags_user_tag_idx ON link_tags(user_id, tag);
 `,
   },
+  {
+    version: 4,
+    name: "controles de acceso",
+    sql: `
+ALTER TABLE links ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE links ADD COLUMN IF NOT EXISTS starts_at DOUBLE PRECISION;
+ALTER TABLE links ADD COLUMN IF NOT EXISTS max_clicks INTEGER;
+ALTER TABLE links ADD COLUMN IF NOT EXISTS notify_at INTEGER;
+ALTER TABLE links ADD COLUMN IF NOT EXISTS notified_at DOUBLE PRECISION;
+`,
+  },
 ];
 
 /** Traduce el SQL de Postgres al dialecto de SQLite. */
@@ -241,6 +252,11 @@ export type LinkRow = {
   created_at: number;
   updated_at: number;
   folder?: string | null;
+  password_hash?: string | null;
+  starts_at?: number | null;
+  max_clicks?: number | null;
+  notify_at?: number | null;
+  notified_at?: number | null;
 };
 
 export type ClickRow = {

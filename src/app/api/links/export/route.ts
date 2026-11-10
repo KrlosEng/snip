@@ -3,7 +3,7 @@ import { apiUser, getOrigin } from "@/lib/http";
 import { toCsv } from "@/lib/csv";
 import { withTags } from "@/lib/links";
 
-const STATUS = { active: "activo", paused: "pausado", expired: "vencido" } as const;
+const STATUS = { active: "activo", paused: "pausado", expired: "vencido", scheduled: "programado" } as const;
 
 /** Todos los enlaces de la persona en CSV (se puede volver a importar tal cual). */
 export async function GET() {
