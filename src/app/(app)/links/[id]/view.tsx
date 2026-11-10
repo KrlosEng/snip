@@ -37,12 +37,15 @@ export function DetailView({
   clicks,
   origin,
   timezone,
+  readOnly = false,
 }: {
   link: LinkDTO;
   stats: LinkStats;
   clicks: { items: ClickItem[]; hasMore: boolean };
   origin: string;
   timezone: string;
+  /** Lector del equipo o cuenta demo: sin editar, pausar ni borrar. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -157,20 +160,24 @@ export function DetailView({
           </a>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="mr-1 inline-flex h-9 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium">
-            <Switch checked={link.isActive} onChange={toggle} label={link.isActive ? "Pausar enlace" : "Activar enlace"} disabled={link.status === "expired"} />
-            {link.isActive ? "Activo" : "Pausado"}
-          </label>
-          <ActionBtn onClick={() => openEdit(link)} icon={<Pencil className="size-4" />}>
-            Editar
-          </ActionBtn>
+          {!readOnly && (
+            <>
+              <label className="mr-1 inline-flex h-9 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium">
+                <Switch checked={link.isActive} onChange={toggle} label={link.isActive ? "Pausar enlace" : "Activar enlace"} disabled={link.status === "expired"} />
+                {link.isActive ? "Activo" : "Pausado"}
+              </label>
+              <ActionBtn onClick={() => openEdit(link)} icon={<Pencil className="size-4" />}>
+                Editar
+              </ActionBtn>
+            </>
+          )}
           <a
             href={`/api/links/${link.id}/export`}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-semibold transition-[border-color,transform] hover:border-line-strong active:scale-[0.97]"
           >
             <Download className="size-4" aria-hidden /> CSV
           </a>
-          <button
+          {!readOnly && <button
             onClick={destroy}
             disabled={deleting}
             className={cx(
@@ -184,7 +191,7 @@ export function DetailView({
                 {confirmDelete ? "¿Borrar? Pulsa otra vez" : "Borrar"}
               </motion.span>
             </AnimatePresence>
-          </button>
+          </button>}
         </div>
       </Item>
 

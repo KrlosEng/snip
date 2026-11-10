@@ -1,5 +1,6 @@
 import { all, type LinkRow } from "@/lib/db";
-import { apiUser, getOrigin } from "@/lib/http";
+import { apiUser, getOrigin, scopeOf } from "@/lib/http";
+import { scopeSql } from "@/lib/workspaces";
 import { toCsv } from "@/lib/csv";
 import { withTags } from "@/lib/links";
 
@@ -10,7 +11,8 @@ export async function GET() {
   const user = await apiUser();
   if (user instanceof Response) return user;
   const origin = await getOrigin();
-  const links = await withTags(await all<LinkRow>("SELECT * FROM links WHERE user_id = ? ORDER BY created_at DESC", user.id));
+  const s = scopeSql(await scopeOf(user.id));
+  const links = await withTags(await all<LinkRow>(`SELECT * FROM links WHERE ${s.sql} ORDER BY created_at DESC`, ...s.args));
   const iso = (ms: number | null) => (ms ? new Date(ms).toISOString() : "");
   const rows: unknown[][] = [["alias", "enlace_corto", "destino", "nombre", "carpeta", "etiquetas", "estado", "clics", "creado_utc", "vence_utc"]];
   for (const l of links) {

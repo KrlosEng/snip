@@ -65,6 +65,14 @@ export async function DELETE(req: Request) {
   }
 
   await destroySession();
+  // Los enlaces que creó en equipos ajenos son del equipo: pasan a su dueño en vez de borrarse.
+  await run(
+    `UPDATE links SET user_id = (SELECT w.owner_id FROM workspaces w WHERE w.id = links.workspace_id)
+     WHERE user_id = ? AND workspace_id IS NOT NULL
+       AND (SELECT w.owner_id FROM workspaces w WHERE w.id = links.workspace_id) <> ?`,
+    user.id,
+    user.id,
+  );
   await run("DELETE FROM users WHERE id = ?", user.id);
   return json({ ok: true });
 }

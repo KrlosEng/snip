@@ -1,6 +1,7 @@
-import { apiUser, demoReadOnly, fail, json, ownHosts } from "@/lib/http";
+import { apiUser, demoReadOnly, fail, json, ownHosts, READ_ONLY_ROLE } from "@/lib/http";
 import { deleteLink, getOwnLink, linkDTO } from "@/lib/links";
 import { updateFromInput } from "@/lib/link-create";
+import { canEdit, linkRole } from "@/lib/workspaces";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/links/[id]">) {
   const user = await apiUser();
@@ -16,6 +17,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) 
   if (blocked) return blocked;
   const link = await getOwnLink(user.id, (await ctx.params).id);
   if (!link) return fail(404, "No encontramos ese enlace.");
+  if (!canEdit(await linkRole(user.id, link))) return fail(403, READ_ONLY_ROLE);
   const r = await updateFromInput(link, await req.json().catch(() => ({})), await ownHosts());
   if (!r.ok) return fail(r.status, r.error, r.field ? { field: r.field } : undefined);
   return json({ link: await linkDTO(r.value) });
@@ -28,6 +30,7 @@ export async function DELETE(_req: Request, ctx: RouteContext<"/api/links/[id]">
   if (blocked) return blocked;
   const link = await getOwnLink(user.id, (await ctx.params).id);
   if (!link) return fail(404, "No encontramos ese enlace.");
+  if (!canEdit(await linkRole(user.id, link))) return fail(403, READ_ONLY_ROLE);
   await deleteLink(link);
   return json({ ok: true });
 }

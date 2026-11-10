@@ -3,6 +3,7 @@ import { UAParser } from "ua-parser-js";
 import { all, get, run, type ClickRow } from "./db";
 import { hashIp } from "./ids";
 import { milestoneEmail, sendMail } from "./mailer";
+import { personalScope, scopeSql, type Scope } from "./workspaces";
 
 const BOT_RE =
   /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|slack|discord|twitter|linkedin|embedly|quora|pinterest|vkshare|skype|bingpreview|headless|curl|wget|python-requests|httpclient|go-http/i;
@@ -246,14 +247,17 @@ export async function recentClicks(linkId: string, page: number, pageSize = 10) 
 
 export type ClickItem = Awaited<ReturnType<typeof recentClicks>>["items"][number];
 
-export async function dashboardStats(userId: string, tz: string) {
+export async function dashboardStats(owner: string | Scope, tz: string) {
+  const sc = typeof owner === "string" ? personalScope(owner) : owner;
+  const s0 = scopeSql(sc);
+  const sl = scopeSql(sc, "l.");
   const counts = await get<{ links: number; active: number; total: number }>(
     `SELECT CAST(COUNT(*) AS INTEGER) AS links,
             CAST(COALESCE(SUM(CASE WHEN is_active = 1 AND (expires_at IS NULL OR expires_at > ?) THEN 1 ELSE 0 END), 0) AS INTEGER) AS active,
             CAST(COALESCE(SUM(click_count), 0) AS INTEGER) AS total
-     FROM links WHERE user_id = ?`,
+     FROM links WHERE ${s0.sql}`,
     Date.now(),
-    userId,
+    ...s0.args,
   );
   const links = num(counts?.links);
   const active = num(counts?.active);
@@ -262,8 +266,8 @@ export async function dashboardStats(userId: string, tz: string) {
   const rows = (
     await all<Pick<ClickRow, "clicked_at">>(
       `SELECT c.clicked_at FROM clicks c JOIN links l ON l.id = c.link_id
-       WHERE l.user_id = ? AND c.clicked_at >= ? AND c.is_bot = 0`,
-      userId,
+       WHERE ${sl.sql} AND c.clicked_at >= ? AND c.is_bot = 0`,
+      ...sl.args,
       since,
     )
   ).map((r) => ({ clicked_at: num(r.clicked_at) }));
@@ -272,9 +276,9 @@ export async function dashboardStats(userId: string, tz: string) {
   const yesterday = s[s.length - 2]?.clicks ?? 0;
   const countryRows = await get<{ label: string; value: number }>(
     `SELECT c.country AS label, CAST(COUNT(*) AS INTEGER) AS value FROM clicks c JOIN links l ON l.id = c.link_id
-     WHERE l.user_id = ? AND c.is_bot = 0 AND c.country IS NOT NULL
+     WHERE ${sl.sql} AND c.is_bot = 0 AND c.country IS NOT NULL
      GROUP BY c.country ORDER BY value DESC LIMIT 1`,
-    userId,
+    ...sl.args,
   );
   const last30 = s.reduce((a, b) => a + b.clicks, 0);
   return {

@@ -85,6 +85,20 @@ export function resetEmail(opts: { link: string; when: string }) {
   return { subject: "Recupera tu cuenta de Snip", text, html };
 }
 
+/** Invitación a un equipo. */
+export function inviteEmail(o: { team: string; inviter: string; role: string; link: string }) {
+  const text = `${o.inviter} te invitó a su equipo "${o.team}" en Snip como ${o.role}.\n\nAcepta aquí (vence en 7 días):\n${o.link}\n\nSi no conoces a esta persona, ignora este correo.`;
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f1e8;padding:32px 16px;font-family:Helvetica,Arial,sans-serif;color:#1b2130">
+<table role="presentation" width="100%" style="max-width:460px;margin:0 auto;background:#fdfbf7;border:1px solid #e3dccf;border-radius:12px">
+<tr><td style="padding:28px 28px 8px"><span style="display:inline-block;background:#d8452c;color:#fdfbf7;font-weight:700;padding:4px 10px;border-radius:6px">✂ Snip</span></td></tr>
+<tr><td style="padding:8px 28px"><h1 style="font-size:20px;margin:12px 0 8px">Te invitaron a ${esc(o.team)}</h1>
+<p style="margin:0;color:#4b5263;line-height:1.5">${esc(o.inviter)} quiere que trabajes con su equipo en Snip como <b>${esc(o.role)}</b>.</p></td></tr>
+<tr><td style="padding:20px 28px 8px"><a href="${esc(o.link)}" style="display:inline-block;background:#d8452c;color:#fdfbf7;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:10px">Ver la invitación</a></td></tr>
+<tr><td style="padding:12px 28px 28px;color:#6b7283;font-size:13px;line-height:1.5">Vence en 7 días. Si no conoces a esta persona, ignora este correo.</td></tr>
+</table></body></html>`;
+  return { subject: `${o.inviter} te invitó a "${o.team}" en Snip`, text, html };
+}
+
 /** Aviso cuando un enlace llega a la meta de clics que eligió su dueño. */
 export function milestoneEmail(o: { name: string; slug: string; title: string | null; count: number; url: string | null }) {
   const n = new Intl.NumberFormat("es-MX").format(o.count);

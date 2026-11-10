@@ -165,6 +165,7 @@ Tabla clicks  →  la leen /api/links/[id]/stats y el panel
 | El generador UTM | `src/lib/utm.ts` y el formulario en `src/components/link-modal.tsx` |
 | Importar y exportar enlaces en CSV | `src/lib/links-import.ts`, `src/lib/csv.ts`, `src/app/api/links/{import,export}` |
 | Contraseña, inicio programado y límite de clics | `src/lib/access.ts` y `src/app/[slug]/route.ts` |
+| Equipos, roles e invitaciones | `src/lib/workspaces.ts`, `src/app/(app)/team`, `src/app/invite`, `src/app/api/workspaces` |
 | La API pública y sus claves | `src/app/api/v1/**`, `src/lib/api-v1.ts`, `src/lib/api-keys.ts` (documentación en `/docs/api`) |
 | Las reglas de uso aceptable | `src/app/uso-aceptable/page.tsx` |
 | Los datos de la cuenta demo | `src/lib/seed.ts` |

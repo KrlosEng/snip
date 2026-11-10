@@ -15,7 +15,14 @@ export type Outcome<T> = { ok: true; value: T } | { ok: false; status: number; e
 const ANON_DAYS = 7;
 const bad = (status: number, error: string, field?: string) => ({ ok: false as const, status, error, field });
 
-export async function createFromInput(user: { id: string } | null, raw: unknown, ip: string, hosts: string[]): Promise<Outcome<LinkRow>> {
+export async function createFromInput(
+  user: { id: string } | null,
+  raw: unknown,
+  ip: string,
+  hosts: string[],
+  /** Equipo donde se crea (el que llama ya revisó que pueda editar). */
+  workspaceId: string | null = null,
+): Promise<Outcome<LinkRow>> {
   const limit = user ? await rateLimit(`links:u:${user.id}`, 100) : await rateLimit(`links:ip:${ip}`, 10);
   if (!limit.ok) {
     const mins = Math.ceil(limit.resetIn / 60);
@@ -60,6 +67,7 @@ export async function createFromInput(user: { id: string } | null, raw: unknown,
   try {
     const link = await createLink({
       userId: user?.id ?? null,
+      workspaceId: user ? workspaceId : null,
       url: dest.url,
       slug: alias,
       expiresAt,

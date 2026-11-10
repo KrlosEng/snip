@@ -154,6 +154,40 @@ CREATE TABLE IF NOT EXISTS api_keys (
 CREATE INDEX IF NOT EXISTS api_keys_user_idx ON api_keys(user_id);
 `,
   },
+  {
+    version: 6,
+    name: "equipos y roles",
+    sql: `
+CREATE TABLE IF NOT EXISTS workspaces (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at DOUBLE PRECISION NOT NULL
+);
+CREATE TABLE IF NOT EXISTS workspace_members (
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  created_at DOUBLE PRECISION NOT NULL,
+  PRIMARY KEY (workspace_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS workspace_members_user_idx ON workspace_members(user_id);
+CREATE TABLE IF NOT EXISTS workspace_invites (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  invited_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at DOUBLE PRECISION NOT NULL,
+  accepted_at DOUBLE PRECISION,
+  created_at DOUBLE PRECISION NOT NULL
+);
+CREATE INDEX IF NOT EXISTS workspace_invites_ws_idx ON workspace_invites(workspace_id);
+ALTER TABLE links ADD COLUMN IF NOT EXISTS workspace_id TEXT REFERENCES workspaces(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS links_workspace_idx ON links(workspace_id, created_at);
+`,
+  },
 ];
 
 /** Traduce el SQL de Postgres al dialecto de SQLite. */
@@ -274,6 +308,8 @@ export type LinkRow = {
   max_clicks?: number | null;
   notify_at?: number | null;
   notified_at?: number | null;
+  /** null = espacio personal de user_id; si no, el equipo dueño del enlace. */
+  workspace_id?: string | null;
 };
 
 export type ClickRow = {

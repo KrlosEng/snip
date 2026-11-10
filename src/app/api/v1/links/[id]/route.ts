@@ -4,6 +4,7 @@ import { deleteLink, getOwnLink, linkDTO } from "@/lib/links";
 import { updateFromInput } from "@/lib/link-create";
 import { fromPublicInput, linkOut, v1Auth, v1error, v1json } from "@/lib/api-v1";
 import { DEMO_EMAIL } from "@/lib/seed";
+import { canEdit, linkRole } from "@/lib/workspaces";
 
 const notFound = (h: Record<string, string>) => v1error(404, "not_found", "No encontramos ese enlace en tu cuenta.", undefined, h);
 
@@ -23,6 +24,7 @@ export async function PATCH(req: NextRequest, rc: RouteContext<"/api/v1/links/[i
   if (ctx.user.email === DEMO_EMAIL) return v1error(403, "read_only", "La cuenta demo es de solo lectura.", undefined, ctx.headers);
   const link = await getOwnLink(ctx.user.id, (await rc.params).id);
   if (!link) return notFound(ctx.headers);
+  if (!canEdit(await linkRole(ctx.user.id, link))) return v1error(403, "read_only", "Tu rol en el equipo de este enlace es de lector.", undefined, ctx.headers);
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") return v1error(400, "invalid_json", "El cuerpo debe ser JSON.", undefined, ctx.headers);
   const r = await updateFromInput(link, fromPublicInput(body), await ownHosts());
@@ -37,6 +39,7 @@ export async function DELETE(req: NextRequest, rc: RouteContext<"/api/v1/links/[
   if (ctx.user.email === DEMO_EMAIL) return v1error(403, "read_only", "La cuenta demo es de solo lectura.", undefined, ctx.headers);
   const link = await getOwnLink(ctx.user.id, (await rc.params).id);
   if (!link) return notFound(ctx.headers);
+  if (!canEdit(await linkRole(ctx.user.id, link))) return v1error(403, "read_only", "Tu rol en el equipo de este enlace es de lector.", undefined, ctx.headers);
   await deleteLink(link);
   return new Response(null, { status: 204, headers: ctx.headers });
 }

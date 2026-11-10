@@ -336,22 +336,28 @@ export function LinksView({
                       <span className="font-normal text-ink-3 md:hidden"> clics</span>
                     </span>
                     <span className="hidden justify-center md:flex">
-                      <Switch checked={l.isActive} onChange={(v) => toggle(l, v)} label={`${l.isActive ? "Pausar" : "Activar"} ${l.slug}`} disabled={l.status === "expired"} />
+                      <Switch checked={l.isActive} onChange={(v) => toggle(l, v)} label={`${l.isActive ? "Pausar" : "Activar"} ${l.slug}`} disabled={readOnly || l.status === "expired"} />
                     </span>
                     <div className="col-span-2 col-start-1 row-start-2 flex items-center justify-self-end gap-0.5 md:col-span-1 md:col-auto md:row-auto md:justify-self-auto md:justify-end">
-                      <span className="mr-1.5 flex md:hidden">
-                        <Switch checked={l.isActive} onChange={(v) => toggle(l, v)} label={`${l.isActive ? "Pausar" : "Activar"} ${l.slug}`} disabled={l.status === "expired"} />
-                      </span>
+                      {!readOnly && (
+                        <span className="mr-1.5 flex md:hidden">
+                          <Switch checked={l.isActive} onChange={(v) => toggle(l, v)} label={`${l.isActive ? "Pausar" : "Activar"} ${l.slug}`} disabled={l.status === "expired"} />
+                        </span>
+                      )}
                       <CopyButton compact text={`${origin}/${l.slug}`} />
                       <IconBtn label={`Estadísticas de ${l.slug}`} href={`/links/${l.id}`}>
                         <BarChart3 className="size-4" />
                       </IconBtn>
-                      <IconBtn label={`Editar ${l.slug}`} onClick={() => openEdit(l)}>
-                        <Pencil className="size-4" />
-                      </IconBtn>
-                      <IconBtn label={`Borrar ${l.slug}`} onClick={() => remove(l)} danger>
-                        <Trash2 className="size-4" />
-                      </IconBtn>
+                      {!readOnly && (
+                        <>
+                          <IconBtn label={`Editar ${l.slug}`} onClick={() => openEdit(l)}>
+                            <Pencil className="size-4" />
+                          </IconBtn>
+                          <IconBtn label={`Borrar ${l.slug}`} onClick={() => remove(l)} danger>
+                            <Trash2 className="size-4" />
+                          </IconBtn>
+                        </>
+                      )}
                     </div>
                   </motion.li>
                 ))}

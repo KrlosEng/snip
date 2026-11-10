@@ -4,25 +4,47 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { LayoutGrid, Link2, LogOut, Plus, Search, Settings } from "lucide-react";
+import { LayoutGrid, Link2, LogOut, Plus, Search, Settings, Users } from "lucide-react";
 import { Kbd, Logo, cx } from "./ui";
 import { LinkModalProvider, useLinkModal } from "./link-modal";
+import { SpaceSwitcher, type Space, type TeamOption } from "./space-switcher";
 
 const NAV = [
   { href: "/dashboard", label: "Panel", icon: LayoutGrid },
-  { href: "/links", label: "Mis enlaces", icon: Link2 },
-  { href: "/settings", label: "Configuración", icon: Settings },
+  { href: "/links", label: "Enlaces", icon: Link2 },
+  { href: "/team", label: "Equipo", icon: Users },
+  { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
 type ShellUser = { name: string; email: string };
 
-export function AppShell({ user, host, isDemo, children }: { user: ShellUser; host: string; isDemo?: boolean; children: ReactNode }) {
+export function AppShell({
+  user,
+  host,
+  isDemo,
+  space = { id: null, name: "Personal", role: "owner" },
+  teams = [],
+  children,
+}: {
+  user: ShellUser;
+  host: string;
+  isDemo?: boolean;
+  space?: Space;
+  teams?: TeamOption[];
+  children: ReactNode;
+}) {
+  const canCreate = space.role !== "viewer";
   return (
     <LinkModalProvider host={host}>
       <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-        <Sidebar user={user} />
+        <Sidebar user={user} space={space} teams={teams} canCreate={canCreate} />
         <div className="flex min-w-0 flex-col pb-[calc(env(safe-area-inset-bottom)+4.5rem)] lg:pb-0">
-          <Topbar />
+          <Topbar space={space} teams={teams} canCreate={canCreate} />
+          {!canCreate && (
+            <p className="border-b border-line bg-surface-2 px-4 py-2.5 text-center text-[13px] text-ink sm:px-6">
+              Estás en <span className="font-semibold">{space.name}</span> como lector: puedes ver los enlaces y sus estadísticas, pero no cambiarlos.
+            </p>
+          )}
           {isDemo && (
             <p className="border-b border-line bg-brand-soft px-4 py-2.5 text-center text-[13px] text-ink sm:px-6">
               Estás en la cuenta demo, de solo lectura.{" "}
@@ -53,9 +75,8 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function Sidebar({ user }: { user: ShellUser }) {
+function Sidebar({ user, space, teams, canCreate }: { user: ShellUser; space: Space; teams: TeamOption[]; canCreate: boolean }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { openCreate } = useLinkModal();
 
   const logout = useLogout();
@@ -63,15 +84,20 @@ function Sidebar({ user }: { user: ShellUser }) {
   return (
     <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface px-4 py-5 lg:flex">
       <Logo href="/dashboard" className="px-2" />
-      <button
-        onClick={openCreate}
-        className="mt-7 flex h-10 items-center justify-between rounded-lg bg-brand px-3 text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.98]"
-      >
-        <span className="inline-flex items-center gap-2">
-          <Plus className="size-4" aria-hidden /> Crear enlace
-        </span>
-        <kbd className="rounded bg-brand-ink/15 px-1.5 font-mono text-[11px]">C</kbd>
-      </button>
+      <div className="mt-6">
+        <SpaceSwitcher space={space} teams={teams} />
+      </div>
+      {canCreate && (
+        <button
+          onClick={openCreate}
+          className="mt-3 flex h-10 items-center justify-between rounded-lg bg-brand px-3 text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.98]"
+        >
+          <span className="inline-flex items-center gap-2">
+            <Plus className="size-4" aria-hidden /> Crear enlace
+          </span>
+          <kbd className="rounded bg-brand-ink/15 px-1.5 font-mono text-[11px]">C</kbd>
+        </button>
+      )}
       <nav className="mt-6 grid gap-0.5" aria-label="Principal">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
@@ -124,7 +150,7 @@ function Sidebar({ user }: { user: ShellUser }) {
   );
 }
 
-function Topbar() {
+function Topbar({ space, teams, canCreate }: { space: Space; teams: TeamOption[]; canCreate: boolean }) {
   const logout = useLogout();
   const router = useRouter();
   const pathname = usePathname();
@@ -174,12 +200,18 @@ function Topbar() {
             </span>
           </label>
         </form>
-        <button
-          onClick={openCreate}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3 text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97] lg:hidden"
-        >
-          <Plus className="size-4" aria-hidden /> Crear
-        </button>
+        <div className="ml-auto lg:hidden">
+          <SpaceSwitcher space={space} teams={teams} compact />
+        </div>
+        {canCreate && (
+          <button
+            onClick={openCreate}
+            className="inline-flex size-9 items-center justify-center gap-1.5 rounded-lg bg-brand text-sm font-semibold text-brand-ink transition-[background-color,transform] hover:bg-brand-strong active:scale-[0.97] sm:w-auto sm:px-3 lg:hidden"
+            aria-label="Crear enlace"
+          >
+            <Plus className="size-4" aria-hidden /> <span className="hidden sm:inline">Crear</span>
+          </button>
+        )}
         <button
           onClick={logout}
           className="grid size-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink lg:hidden"
@@ -198,7 +230,7 @@ function BottomNav() {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden"
     >
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href);

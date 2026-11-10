@@ -4,6 +4,7 @@ import { hashPassword, randomSlug, uuid } from "./ids";
 import { cacheDelete } from "./cache";
 import { safeFetch } from "./net-guard";
 import { blockedReason } from "./access";
+import { personalScope, scopeSql, type Scope } from "./workspaces";
 
 export type LinkStatus = "active" | "paused" | "expired" | "scheduled";
 
@@ -136,15 +137,21 @@ export async function setTags(linkId: string, userId: string, tags: string[]): P
 export type Facets = { folders: { name: string; count: number }[]; tags: { name: string; count: number }[] };
 
 /** Carpetas y etiquetas que ya usa la persona, con cuántos enlaces tiene cada una. */
-export async function listFacets(userId: string): Promise<Facets> {
+/** Acepta un espacio o, por compatibilidad, solo el id (= espacio personal). */
+export const toScope = (o: string | Scope): Scope => (typeof o === "string" ? personalScope(o) : o);
+
+export async function listFacets(owner: string | Scope): Promise<Facets> {
+  const s = scopeSql(toScope(owner));
+  const sl = scopeSql(toScope(owner), "l.");
   const [folders, tags] = await Promise.all([
     all<{ name: string; n: number }>(
-      "SELECT folder AS name, CAST(COUNT(*) AS INTEGER) AS n FROM links WHERE user_id = ? AND folder IS NOT NULL GROUP BY folder ORDER BY LOWER(folder)",
-      userId,
+      `SELECT folder AS name, CAST(COUNT(*) AS INTEGER) AS n FROM links WHERE ${s.sql} AND folder IS NOT NULL GROUP BY folder ORDER BY LOWER(folder)`,
+      ...s.args,
     ),
     all<{ name: string; n: number }>(
-      "SELECT tag AS name, CAST(COUNT(*) AS INTEGER) AS n FROM link_tags WHERE user_id = ? GROUP BY tag ORDER BY COUNT(*) DESC, tag LIMIT 50",
-      userId,
+      `SELECT t.tag AS name, CAST(COUNT(*) AS INTEGER) AS n FROM link_tags t JOIN links l ON l.id = t.link_id WHERE ${sl.sql}
+       GROUP BY t.tag ORDER BY COUNT(*) DESC, t.tag LIMIT 50`,
+      ...sl.args,
     ),
   ]);
   return {
@@ -167,6 +174,8 @@ export async function uniqueRandomSlug(): Promise<string> {
 
 export async function createLink(input: {
   userId: string | null;
+  /** Equipo dueño del enlace (null = espacio personal). */
+  workspaceId?: string | null;
   url: string;
   slug?: string | null;
   expiresAt: number | null;
@@ -197,13 +206,29 @@ export async function createLink(input: {
     row.id, row.user_id, row.slug, row.destination_url, row.title, row.is_active, row.expires_at, 0, now, now, row.folder ?? null,
     row.password_hash ?? null, row.starts_at ?? null, row.max_clicks ?? null, row.notify_at ?? null,
   );
+  if (input.userId && input.workspaceId) {
+    await run("UPDATE links SET workspace_id = ? WHERE id = ?", input.workspaceId, row.id);
+    row.workspace_id = input.workspaceId;
+  }
   if (input.userId && input.tags?.length) await setTags(row.id, input.userId, input.tags);
   return row;
 }
 
 /** Siempre filtra por user_id: nadie ve enlaces ajenos cambiando el id. */
+/**
+ * Enlace al que la persona tiene acceso: uno suyo del espacio personal, o uno
+ * de un equipo del que es miembro. Para cambiarlo, revisa además canEdit(linkRole(...)).
+ */
 export async function getOwnLink(userId: string, id: string): Promise<LinkRow | null> {
-  const row = await get<LinkRow>("SELECT * FROM links WHERE id = ? AND user_id = ?", id, userId);
+  const row = await get<LinkRow>(
+    `SELECT * FROM links WHERE id = ? AND (
+       (workspace_id IS NULL AND user_id = ?)
+       OR workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = ?)
+     )`,
+    id,
+    userId,
+    userId,
+  );
   return row ? normalize(row) : null;
 }
 
@@ -218,11 +243,12 @@ export type ListParams = {
   tag?: string | null;
 };
 
-export async function listLinks(userId: string, p: ListParams) {
+export async function listLinks(owner: string | Scope, p: ListParams) {
   const pageSize = p.pageSize ?? 10;
   const page = Math.max(1, p.page ?? 1);
-  const where: string[] = ["user_id = ?"];
-  const args: (string | number)[] = [userId];
+  const scope = scopeSql(toScope(owner));
+  const where: string[] = [scope.sql];
+  const args: (string | number)[] = [...scope.args];
   if (p.q?.trim()) {
     where.push("(LOWER(slug) LIKE ? OR LOWER(destination_url) LIKE ? OR LOWER(COALESCE(title,'')) LIKE ?)");
     const like = `%${p.q.trim().toLowerCase().replace(/[%_\\]/g, "")}%`;
@@ -235,8 +261,8 @@ export async function listLinks(userId: string, p: ListParams) {
     args.push(p.folder);
   }
   if (p.tag) {
-    where.push("id IN (SELECT link_id FROM link_tags WHERE user_id = ? AND tag = ?)");
-    args.push(userId, p.tag);
+    where.push("id IN (SELECT link_id FROM link_tags WHERE tag = ?)");
+    args.push(p.tag);
   }
   const now = Date.now();
   if (p.status === "active") {
@@ -297,8 +323,9 @@ export async function deleteLink(link: LinkRow): Promise<void> {
   await cacheDelete(link.slug);
 }
 
-export async function recentLinks(userId: string, n = 5): Promise<LinkDTO[]> {
-  return withTags(await all<LinkRow>("SELECT * FROM links WHERE user_id = ? ORDER BY created_at DESC LIMIT ?", userId, n));
+export async function recentLinks(owner: string | Scope, n = 5): Promise<LinkDTO[]> {
+  const s = scopeSql(toScope(owner));
+  return withTags(await all<LinkRow>(`SELECT * FROM links WHERE ${s.sql} ORDER BY created_at DESC LIMIT ?`, ...s.args, n));
 }
 
 /** Toma el <title> del destino (en segundo plano, con límite de tiempo). */

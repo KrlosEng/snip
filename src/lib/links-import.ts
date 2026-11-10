@@ -43,7 +43,7 @@ export class ImportError extends Error {}
  * Crea enlaces a partir de un CSV. Revisa cada fila igual que el formulario
  * (destino válido, alias libre, sitio seguro) y reporta las que no se pudieron crear.
  */
-export async function importLinks(userId: string, csv: string, ownHosts: string[]): Promise<ImportResult> {
+export async function importLinks(userId: string, csv: string, ownHosts: string[], workspaceId: string | null = null): Promise<ImportResult> {
   const rows = parseCsv(csv);
   if (!rows.length) throw new ImportError("El archivo está vacío.");
 
@@ -109,6 +109,7 @@ export async function importLinks(userId: string, csv: string, ownHosts: string[
     try {
       await createLink({
         userId,
+        workspaceId,
         url: dest.url,
         slug: alias,
         expiresAt: null,

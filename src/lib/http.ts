@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { currentScope, WS_COOKIE, type Scope } from "./workspaces";
 import { getUser, type PublicUser } from "./auth";
 import { DEMO_EMAIL } from "./seed";
 
@@ -27,6 +28,13 @@ export function demoReadOnly(user: PublicUser | null): NextResponse | null {
   if (user?.email !== DEMO_EMAIL) return null;
   return fail(403, "La cuenta demo es de solo lectura. Crea una cuenta gratis para crear y editar tus propios enlaces.", { demo: true });
 }
+
+/** Espacio activo (personal o equipo) según la cookie, validando que siga siendo miembro. */
+export async function scopeOf(userId: string): Promise<Scope> {
+  return currentScope(userId, (await cookies()).get(WS_COOKIE)?.value);
+}
+
+export const READ_ONLY_ROLE = "Tu rol en este equipo es de lector: puedes ver los enlaces y sus estadísticas, pero no cambiarlos.";
 
 export function clientIp(h: Headers): string {
   return (

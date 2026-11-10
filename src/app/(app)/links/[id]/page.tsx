@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth";
 import { getOwnLink, linkDTO } from "@/lib/links";
 import { linkStats, readFilter, recentClicks, RANGES, type Range } from "@/lib/clicks";
 import { getOrigin } from "@/lib/http";
+import { DEMO_EMAIL } from "@/lib/seed";
+import { canEdit, linkRole } from "@/lib/workspaces";
 import { DetailView } from "./view";
 
 export const metadata: Metadata = { title: "Detalle del enlace" };
@@ -27,6 +29,7 @@ export default async function LinkDetailPage({ params, searchParams }: PageProps
       clicks={await recentClicks(link.id, 1)}
       origin={await getOrigin()}
       timezone={user.timezone}
+      readOnly={user.email === DEMO_EMAIL || !canEdit(await linkRole(user.id, link))}
     />
   );
 }
