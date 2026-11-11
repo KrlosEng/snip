@@ -2,6 +2,7 @@ import "server-only";
 import { all, get, run, type LinkRow } from "./db";
 import { randomToken, sha256, uuid } from "./ids";
 import { inviteEmail, sendMail } from "./mailer";
+import { planOf, PLANS, teamSeats } from "./plans";
 
 /**
  * Espacios de trabajo (equipos). Cada persona tiene su espacio personal
@@ -15,8 +16,6 @@ export type Role = "owner" | "editor" | "viewer";
 export const ROLES: Role[] = ["owner", "editor", "viewer"];
 export const ROLE_LABEL: Record<Role, string> = { owner: "Dueño", editor: "Editor", viewer: "Lector" };
 export const WS_COOKIE = "snip_ws";
-export const MAX_WORKSPACES = 10;
-export const MAX_MEMBERS = 25;
 export const INVITE_DAYS = 7;
 
 /** Dónde trabaja la persona ahora: su espacio personal o un equipo. */
@@ -71,7 +70,15 @@ export async function createWorkspace(userId: string, nameRaw: string): Promise<
   const name = cleanName(nameRaw);
   if (!name) return no("Ponle un nombre al equipo.");
   const owned = Number((await get<{ n: number }>("SELECT CAST(COUNT(*) AS INTEGER) AS n FROM workspaces WHERE owner_id = ?", userId))?.n ?? 0);
-  if (owned >= MAX_WORKSPACES) return no(`Puedes crear hasta ${MAX_WORKSPACES} equipos.`);
+  const plan = await planOf(userId);
+  if (owned >= plan.limits.teams) {
+    return no(
+      plan.id === "free"
+        ? `Tu plan Gratis incluye ${plan.limits.teams} equipo. Con Pro puedes tener hasta ${PLANS.pro.limits.teams}.`
+        : `Puedes tener hasta ${plan.limits.teams} equipos.`,
+      403,
+    );
+  }
   const id = uuid();
   const now = Date.now();
   await run("INSERT INTO workspaces (id, name, owner_id, created_at) VALUES (?, ?, ?, ?)", id, name, userId, now);
@@ -143,8 +150,19 @@ export async function inviteMember(
   if (await get("SELECT 1 AS x FROM workspace_members m JOIN users u ON u.id = m.user_id WHERE m.workspace_id = ? AND u.email = ?", workspaceId, email)) {
     return no("Esa persona ya es parte del equipo.");
   }
-  const count = Number((await get<{ n: number }>("SELECT CAST(COUNT(*) AS INTEGER) AS n FROM workspace_members WHERE workspace_id = ?", workspaceId))?.n ?? 0);
-  if (count >= MAX_MEMBERS) return no(`Un equipo puede tener hasta ${MAX_MEMBERS} personas.`);
+  // El límite depende del plan del dueño; las invitaciones pendientes también ocupan lugar
+  // (salvo la que se va a reemplazar para este mismo correo).
+  const owner = await get<{ owner_id: string }>("SELECT owner_id FROM workspaces WHERE id = ?", workspaceId);
+  const plan = await planOf(owner?.owner_id ?? actorId);
+  const replacing = await get("SELECT 1 AS x FROM workspace_invites WHERE workspace_id = ? AND email = ? AND accepted_at IS NULL AND expires_at > ?", workspaceId, email, Date.now());
+  if ((await teamSeats(workspaceId)) - (replacing ? 1 : 0) >= plan.limits.membersPerTeam) {
+    return no(
+      plan.id === "free"
+        ? `En el plan Gratis un equipo puede tener ${plan.limits.membersPerTeam} personas, contando invitaciones pendientes. Con Pro, hasta ${PLANS.pro.limits.membersPerTeam}.`
+        : `Un equipo puede tener hasta ${plan.limits.membersPerTeam} personas, contando invitaciones pendientes.`,
+      403,
+    );
+  }
 
   await run("DELETE FROM workspace_invites WHERE workspace_id = ? AND email = ? AND accepted_at IS NULL", workspaceId, email);
   const token = randomToken(32);

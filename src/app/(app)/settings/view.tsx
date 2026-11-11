@@ -10,10 +10,23 @@ import { useToast } from "@/components/providers";
 import { applyTheme, currentTheme, type Theme } from "@/components/theme";
 import type { PublicUser } from "@/lib/auth";
 import { ApiKeys } from "@/components/api-keys";
+import { PlanCard, type PlanSummary } from "@/components/plan-card";
 
 type DeleteMethod = "password" | "code" | "email";
 
-export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: PublicUser; isDemo: boolean; providers: string[]; deleteMethod: DeleteMethod }) {
+export function SettingsView({
+  user,
+  isDemo,
+  providers,
+  deleteMethod,
+  plan,
+}: {
+  user: PublicUser;
+  isDemo: boolean;
+  providers: string[];
+  deleteMethod: DeleteMethod;
+  plan: PlanSummary;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [name, setName] = useState(user.name);
@@ -109,6 +122,13 @@ export function SettingsView({ user, isDemo, providers, deleteMethod }: { user: 
         <div className="p-5 sm:p-6">
           <ThemePicker />
         </div>
+      </Item>
+
+      <Item as="section" className="rounded-xl border border-line bg-surface">
+        <div className="border-b border-line px-5 py-4 sm:px-6">
+          <h2 className="text-base font-semibold">Plan y uso</h2>
+        </div>
+        <PlanCard plan={plan} />
       </Item>
 
       <Item as="section" className="rounded-xl border border-line bg-surface">

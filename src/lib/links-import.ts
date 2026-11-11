@@ -1,5 +1,6 @@
 import "server-only";
 import { parseCsv } from "./csv";
+import { linkQuotaError, planOf, UPGRADE } from "./plans";
 import { createLink, isUnsafe, slugExists } from "./links";
 import { aliasSchema, checkDestination, cleanTags, folderSchema } from "./validation";
 
@@ -55,6 +56,7 @@ export async function importLinks(userId: string, csv: string, ownHosts: string[
   if (!data.length) throw new ImportError("El archivo solo tiene encabezados.");
   if (data.length > IMPORT_MAX_ROWS) throw new ImportError(`Puedes importar hasta ${IMPORT_MAX_ROWS} enlaces por archivo; este tiene ${data.length}.`);
 
+  if (!(await planOf(userId)).limits.csvImport) throw new ImportError(`Importar desde CSV es parte del plan Pro. ${UPGRADE}`);
   const result: ImportResult = { created: 0, total: data.length, errors: [] };
   const seen = new Set<string>();
 
@@ -66,6 +68,11 @@ export async function importLinks(userId: string, csv: string, ownHosts: string[
     };
     const fail = (error: string) => result.errors.push({ row: rowNum, error });
 
+    const quota = await linkQuotaError(userId);
+    if (quota) {
+      fail(quota);
+      continue;
+    }
     const raw = get("url");
     if (!raw) {
       fail("Falta el enlace de destino.");

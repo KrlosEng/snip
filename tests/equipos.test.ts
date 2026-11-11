@@ -91,7 +91,7 @@ describe("equipos y roles", () => {
     if (!t.ok) throw new Error(t.error);
     expect((await ws.inviteMember(t.value.id, dani.id, "no-es-correo", "viewer", "https://snip.test")).ok).toBe(false);
     expect((await ws.inviteMember(t.value.id, dani.id, "dani@prueba.mx", "viewer", "https://snip.test")).ok).toBe(false); // ya es miembro
-    for (let i = 1; i < ws.MAX_WORKSPACES; i++) await ws.createWorkspace(dani.id, `E${i}`);
+    for (let i = 1; i < 10; i++) await ws.createWorkspace(dani.id, `E${i}`);
     expect((await ws.createWorkspace(dani.id, "Uno más")).ok).toBe(false);
   });
 });

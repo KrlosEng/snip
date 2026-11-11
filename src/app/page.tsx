@@ -190,6 +190,9 @@ export default async function Home() {
                 <Link href="/docs/api" className="transition-colors hover:text-white">API</Link>
               </li>
               <li>
+                <Link href="/planes" className="transition-colors hover:text-white">Planes</Link>
+              </li>
+              <li>
                 <a href="https://github.com/KrlosEng/snip" className="transition-colors hover:text-white">GitHub</a>
               </li>
             </ul>

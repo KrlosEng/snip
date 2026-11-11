@@ -33,6 +33,7 @@ describe("claves de API", () => {
 
   it("limita a 5 claves activas y pide nombre", async () => {
     await user("k2");
+    await run("UPDATE users SET plan = 'pro' WHERE id = ?", "k2");
     expect((await createKey("k2", "   ")).ok).toBe(false);
     for (let i = 0; i < MAX_KEYS; i++) expect((await createKey("k2", `c${i}`)).ok).toBe(true);
     expect((await createKey("k2", "una más")).ok).toBe(false);

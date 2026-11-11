@@ -3,6 +3,7 @@ import { rateLimit } from "./cache";
 import type { LinkRow } from "./db";
 import { createLink, isUnsafe, slugExists, updateLink, type AccessPatch } from "./links";
 import { checkDestination, createLinkSchema, parseAccess, parseExpiry, updateLinkSchema } from "./validation";
+import { linkQuotaError, planOf, UPGRADE } from "./plans";
 
 /**
  * Crear y editar enlaces desde cualquier entrada (la app o la API pública).
@@ -42,6 +43,11 @@ export async function createFromInput(
   const dest = checkDestination(parsed.data.url, hosts);
   if (!dest.ok) return bad(400, dest.error, "url");
 
+  if (user) {
+    const quota = await linkQuotaError(user.id);
+    if (quota) return bad(403, quota);
+  }
+
   const alias = parsed.data.alias || null;
   if (alias && !user) return bad(401, "Crea una cuenta gratis para elegir tu propio alias.", "alias");
   if (alias && (await slugExists(alias))) return bad(409, "Ese alias ya está ocupado. Prueba otra variante.", "alias");
@@ -59,6 +65,7 @@ export async function createFromInput(
   if (user && parsed.data.access) {
     const a = parseAccess(parsed.data.access, expiresAt);
     if (!a.ok) return bad(400, a.error, a.field);
+    if (a.patch.password && !(await planOf(user.id)).limits.passwordLinks) return bad(403, `Los enlaces con contraseña son del plan Pro. ${UPGRADE}`, "password");
     access = a.patch;
   }
 
@@ -82,7 +89,7 @@ export async function createFromInput(
   }
 }
 
-export async function updateFromInput(link: LinkRow, raw: unknown, hosts: string[]): Promise<Outcome<LinkRow>> {
+export async function updateFromInput(link: LinkRow, raw: unknown, hosts: string[], actorId?: string): Promise<Outcome<LinkRow>> {
   const parsed = updateLinkSchema.safeParse(raw);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -115,6 +122,10 @@ export async function updateFromInput(link: LinkRow, raw: unknown, hosts: string
   if (p.access) {
     const a = parseAccess(p.access, patch.expiresAt !== undefined ? patch.expiresAt : link.expires_at);
     if (!a.ok) return bad(400, a.error, a.field);
+    const payer = actorId ?? link.user_id;
+    if (a.patch.password && payer && !(await planOf(payer)).limits.passwordLinks) {
+      return bad(403, `Los enlaces con contraseña son del plan Pro. ${UPGRADE}`, "password");
+    }
     patch.access = a.patch;
   }
   if (patch.url && (await isUnsafe(patch.url))) return bad(422, "Google marcó ese sitio como peligroso. No podemos usarlo.", "url");

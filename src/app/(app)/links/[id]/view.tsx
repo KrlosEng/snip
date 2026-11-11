@@ -38,7 +38,10 @@ export function DetailView({
   origin,
   timezone,
   readOnly = false,
+  maxDays = 90,
 }: {
+  /** Días máximos de estadísticas según el plan (Gratis: 30). */
+  maxDays?: number;
   link: LinkDTO;
   stats: LinkStats;
   clicks: { items: ClickItem[]; hasMore: boolean };
@@ -207,8 +210,13 @@ export function DetailView({
                     key={r}
                     role="radio"
                     aria-checked={stats.range === r}
+                    disabled={parseInt(r, 10) > maxDays}
+                    title={parseInt(r, 10) > maxDays ? "90 días es parte del plan Pro" : undefined}
                     onClick={() => go({ range: r })}
-                    className={cx("relative h-8 rounded-md px-3 text-[13px] font-medium transition-colors", stats.range === r ? "text-ink" : "text-ink-3 hover:text-ink")}
+                    className={cx(
+                      "relative h-8 rounded-md px-3 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                      stats.range === r ? "text-ink" : "text-ink-3 hover:text-ink",
+                    )}
                   >
                     {stats.range === r && <motion.span layoutId="range-pill" className="absolute inset-0 rounded-md bg-surface" transition={{ duration: 0.3, ease: EASE }} />}
                     <span className="relative">{RANGE_LABEL[r]}</span>

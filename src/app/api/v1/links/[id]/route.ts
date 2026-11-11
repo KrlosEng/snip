@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, rc: RouteContext<"/api/v1/links/[i
   if (!canEdit(await linkRole(ctx.user.id, link))) return v1error(403, "read_only", "Tu rol en el equipo de este enlace es de lector.", undefined, ctx.headers);
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") return v1error(400, "invalid_json", "El cuerpo debe ser JSON.", undefined, ctx.headers);
-  const r = await updateFromInput(link, fromPublicInput(body), await ownHosts());
+  const r = await updateFromInput(link, fromPublicInput(body), await ownHosts(), ctx.user.id);
   if (!r.ok) return v1error(r.status, r.status === 409 ? "conflict" : "invalid_request", r.error, r.field, ctx.headers);
   return v1json(linkOut(await linkDTO(r.value), await getOrigin()), 200, ctx.headers);
 }

@@ -18,7 +18,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/links/[id]">) 
   const link = await getOwnLink(user.id, (await ctx.params).id);
   if (!link) return fail(404, "No encontramos ese enlace.");
   if (!canEdit(await linkRole(user.id, link))) return fail(403, READ_ONLY_ROLE);
-  const r = await updateFromInput(link, await req.json().catch(() => ({})), await ownHosts());
+  const r = await updateFromInput(link, await req.json().catch(() => ({})), await ownHosts(), user.id);
   if (!r.ok) return fail(r.status, r.error, r.field ? { field: r.field } : undefined);
   return json({ link: await linkDTO(r.value) });
 }

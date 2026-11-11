@@ -188,6 +188,15 @@ ALTER TABLE links ADD COLUMN IF NOT EXISTS workspace_id TEXT REFERENCES workspac
 CREATE INDEX IF NOT EXISTS links_workspace_idx ON links(workspace_id, created_at);
 `,
   },
+  {
+    version: 7,
+    name: "planes",
+    sql: `
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'free';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_until DOUBLE PRECISION;
+CREATE INDEX IF NOT EXISTS links_user_created_idx ON links(user_id, created_at);
+`,
+  },
 ];
 
 /** Traduce el SQL de Postgres al dialecto de SQLite. */

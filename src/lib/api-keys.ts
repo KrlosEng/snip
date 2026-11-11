@@ -1,6 +1,7 @@
 import "server-only";
 import { all, get, run, type UserRow } from "./db";
 import { randomToken, sha256, uuid } from "./ids";
+import { planOf, PLANS } from "./plans";
 
 /**
  * Claves de la API pública. La clave completa se muestra una sola vez al
@@ -8,6 +9,7 @@ import { randomToken, sha256, uuid } from "./ids";
  * persona la reconozca en la lista.
  */
 
+/** Máximo absoluto (plan Pro); el de cada persona depende de su plan. */
 export const MAX_KEYS = 5;
 const PREFIX = "snip_";
 
@@ -37,7 +39,16 @@ export async function createKey(userId: string, nameRaw: string): Promise<Create
   const name = nameRaw.trim().replace(/\s+/g, " ").slice(0, 40);
   if (!name) return { ok: false, error: "Ponle un nombre a la clave para reconocerla." };
   const active = Number((await get<{ n: number }>("SELECT CAST(COUNT(*) AS INTEGER) AS n FROM api_keys WHERE user_id = ? AND revoked_at IS NULL", userId))?.n ?? 0);
-  if (active >= MAX_KEYS) return { ok: false, error: `Puedes tener hasta ${MAX_KEYS} claves activas. Revoca una para crear otra.` };
+  const plan = await planOf(userId);
+  if (active >= plan.limits.apiKeys) {
+    return {
+      ok: false,
+      error:
+        plan.id === "free"
+          ? `Tu plan Gratis incluye ${plan.limits.apiKeys} clave activa. Revócala para crear otra, o pásate a Pro para tener hasta ${PLANS.pro.limits.apiKeys}.`
+          : `Puedes tener hasta ${plan.limits.apiKeys} claves activas. Revoca una para crear otra.`,
+    };
+  }
   const key = `${PREFIX}${randomToken(32)}`;
   const item: ApiKeyDTO = { id: uuid(), name, prefix: `${key.slice(0, 9)}…${key.slice(-4)}`, createdAt: Date.now(), lastUsedAt: null };
   await run(

@@ -95,6 +95,7 @@ describe("carpetas y etiquetas", () => {
 describe("importar CSV", () => {
   it("crea los válidos y reporta cada fila con problema", async () => {
     await user("eli");
+    await run("UPDATE users SET plan = 'pro' WHERE id = ?", "eli");
     const csv = [
       "Destino,Alias,Nombre,Carpeta,Etiquetas",
       "https://ok.mx,import-uno,Primero,Campañas,\"promo, otoño\"",
