@@ -259,7 +259,7 @@ export function LinksView({
                     aria-pressed={on}
                     onClick={() => nav({ tag: on ? null : t.name })}
                     className={cx(
-                      "inline-flex h-8 shrink-0 items-center gap-1 rounded-full border px-3 text-[13px] font-medium transition-[background-color,border-color,color,transform] active:scale-[0.96]",
+                      "inline-flex h-9 shrink-0 items-center gap-1 rounded-full border px-3 text-[13px] font-medium transition-[background-color,border-color,color,transform] active:scale-[0.96]",
                       on ? "border-brand bg-brand-soft text-ink" : "border-line text-ink-2 hover:border-line-strong hover:text-ink",
                     )}
                   >

@@ -318,7 +318,7 @@ function LinkDialog({
                         key={t.name}
                         type="button"
                         onClick={() => addTag(t.name)}
-                        className="h-7 rounded-full border border-line px-2.5 text-[12px] text-ink-2 transition-[border-color,color,transform] hover:border-line-strong hover:text-ink active:scale-[0.96]"
+                        className="h-9 rounded-full border border-line px-3 text-[12px] text-ink-2 transition-[border-color,color,transform] hover:border-line-strong hover:text-ink active:scale-[0.96]"
                       >
                         + #{t.name}
                       </button>

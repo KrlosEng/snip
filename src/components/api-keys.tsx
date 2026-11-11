@@ -137,7 +137,7 @@ export function ApiKeys({ isDemo }: { isDemo: boolean }) {
                 type="button"
                 onClick={() => revoke(k)}
                 className={cx(
-                  "h-8 rounded-lg border px-3 text-[13px] font-semibold transition-[background-color,border-color,color,transform] active:scale-[0.97]",
+                  "h-9 rounded-lg border px-3 text-[13px] font-semibold transition-[background-color,border-color,color,transform] active:scale-[0.97]",
                   confirm === k.id ? "border-danger bg-danger text-brand-ink" : "border-line text-danger hover:border-danger/50",
                 )}
               >

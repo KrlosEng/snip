@@ -53,7 +53,6 @@ export function SpaceSwitcher({ space, teams, compact = false }: { space: Space;
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Espacio: ${space.name}. Cambiar de espacio`}
         className={cx(
@@ -77,15 +76,15 @@ export function SpaceSwitcher({ space, teams, compact = false }: { space: Space;
             transition={{ duration: 0.16, ease: EASE }}
             className={cx("absolute z-50 mt-1.5 min-w-[240px] origin-top overflow-hidden rounded-xl border border-line bg-surface shadow-3", compact ? "right-0" : "inset-x-0")}
           >
-            <ul role="listbox" aria-label="Espacios" className="max-h-[50dvh] overflow-y-auto p-1">
+            <ul aria-label="Espacios" className="max-h-[50dvh] overflow-y-auto p-1">
               {options.map((o) => {
                 const on = o.id === space.id;
                 return (
                   <li key={o.id ?? "personal"}>
                     <button
                       type="button"
-                      role="option"
-                      aria-selected={on}
+                      aria-current={on ? "true" : undefined}
+
                       onClick={() => pick(o.id)}
                       className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-surface-2"
                     >

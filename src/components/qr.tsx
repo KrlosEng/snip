@@ -24,9 +24,9 @@ export function QrStudio({ value, linkId, caption }: { value: string; linkId: st
   const q = qrQuery(o);
   const href = (format: "png" | "svg") => `/api/links/${linkId}/qr?format=${format}${q ? `&${q}` : ""}`;
   const changed = q !== "";
-  const field = "h-8 rounded-lg border border-line bg-surface px-2 text-[13px] outline-none hover:border-line-strong focus:border-brand";
+  const field = "h-10 rounded-lg border border-line bg-surface px-2 text-[13px] outline-none hover:border-line-strong focus:border-brand";
   const dl =
-    "inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] font-semibold text-ink transition-[border-color,transform] hover:border-line-strong active:scale-[0.97]";
+    "inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] font-semibold text-ink transition-[border-color,transform] hover:border-line-strong active:scale-[0.97]";
 
   return (
     <div className="grid gap-4">
@@ -43,7 +43,7 @@ export function QrStudio({ value, linkId, caption }: { value: string; linkId: st
               onClick={() => set({ fg: s.fg, bg: s.bg })}
               aria-pressed={on}
               title={s.name}
-              className={cx("grid size-8 place-items-center rounded-full border transition-transform active:scale-[0.92]", on ? "border-brand ring-2 ring-brand/40" : "border-line")}
+              className={cx("grid size-10 place-items-center rounded-full border transition-transform active:scale-[0.92]", on ? "border-brand ring-2 ring-brand/40" : "border-line")}
               style={{ backgroundColor: s.bg }}
             >
               <span className="size-3.5 rounded-[3px]" style={{ backgroundColor: s.fg }} />
@@ -62,14 +62,14 @@ export function QrStudio({ value, linkId, caption }: { value: string; linkId: st
         <label className="grid gap-1">
           <span className="text-ink-3">Puntos</span>
           <span className="flex items-center gap-2">
-            <input type="color" value={o.fg} onChange={(e) => set({ fg: e.target.value })} className="h-8 w-10 cursor-pointer rounded border border-line bg-transparent" />
+            <input type="color" value={o.fg} onChange={(e) => set({ fg: e.target.value })} className="h-10 w-12 cursor-pointer rounded border border-line bg-transparent" />
             <span className="font-mono text-[12px] text-ink-2">{o.fg}</span>
           </span>
         </label>
         <label className="grid gap-1">
           <span className="text-ink-3">Fondo</span>
           <span className="flex items-center gap-2">
-            <input type="color" value={o.bg} onChange={(e) => set({ bg: e.target.value })} className="h-8 w-10 cursor-pointer rounded border border-line bg-transparent" />
+            <input type="color" value={o.bg} onChange={(e) => set({ bg: e.target.value })} className="h-10 w-12 cursor-pointer rounded border border-line bg-transparent" />
             <span className="font-mono text-[12px] text-ink-2">{o.bg}</span>
           </span>
         </label>
@@ -183,7 +183,7 @@ export async function downloadQr(value: string, slug: string, format: "png" | "s
 
 export function QrDownloads({ value, slug, linkId }: { value: string; slug: string; linkId?: string }) {
   const cls =
-    "inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] font-semibold text-ink transition-[border-color,transform] hover:border-line-strong active:scale-[0.97]";
+    "inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] font-semibold text-ink transition-[border-color,transform] hover:border-line-strong active:scale-[0.97]";
   if (linkId) {
     return (
       <div className="flex gap-2">

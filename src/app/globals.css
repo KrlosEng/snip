@@ -18,6 +18,7 @@
   --ink-2: #44444c;
   --ink-3: #6b6b75;
   --brand: #8052ff;
+  --brand-text: #8052ff;
   --brand-strong: #6a3be6;
   --brand-soft: #ece6ff;
   --brand-ink: #ffffff;
@@ -27,7 +28,7 @@
   --success-soft: #def2ec;
   --danger: #c0392b;
   --danger-soft: #fbe6e3;
-  --warn: #a8700a;
+  --warn: #946205;
   --warn-soft: #fdf1d6;
   --violet: #8a8a96;
   --chart-2: #e09a00;
@@ -51,6 +52,7 @@
   --ink-2: #bdbdbd;
   --ink-3: #9a9a9a;
   --brand: #8052ff;
+  --brand-text: #9575ff;
   --brand-strong: #9a75ff;
   --brand-soft: #1b1233;
   --brand-ink: #ffffff;
@@ -80,6 +82,7 @@
   --ink-2: #bdbdbd;
   --ink-3: #9a9a9a;
   --brand: #8052ff;
+  --brand-text: #9575ff;
   --brand-strong: #9a75ff;
   --brand-soft: #1b1233;
   --brand-ink: #ffffff;
@@ -235,3 +238,6 @@
   .js [data-rise]:not([data-shown]) { opacity: 0; transform: translateY(24px); }
 }
 
+
+/* Texto violeta: en oscuro usa un tono más claro para pasar contraste AA (4.5:1) sin cambiar el fondo de los botones. */
+.text-brand { color: var(--brand-text); }

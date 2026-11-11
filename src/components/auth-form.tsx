@@ -87,7 +87,7 @@ export function AuthForm({ mode, providers, initialError }: { mode: "login" | "r
         <Item className="mt-7">
           <div className={providers.length > 1 ? "grid gap-2.5" : ""}>
             {providers.map((p) => (
-              /* eslint-disable-next-line @next/next/no-html-link-for-pages -- ruta de API (redirección OAuth), no una página */
+               
               <a
                 key={p}
                 href={`/api/auth/${p}`}

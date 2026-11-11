@@ -233,7 +233,7 @@ export function DetailView({
                     key={k}
                     type="button"
                     onClick={() => go({ [k]: null })}
-                    className="inline-flex h-7 items-center gap-1 rounded-full border border-brand bg-surface px-2.5 text-[13px] font-medium transition-transform active:scale-[0.96]"
+                    className="inline-flex h-9 items-center gap-1 rounded-full border border-brand bg-surface px-3 text-[13px] font-medium transition-transform active:scale-[0.96]"
                     aria-label={`Quitar filtro ${FILTER_LABEL[k]}: ${filter[k]}`}
                   >
                     <span className="text-ink-3">{FILTER_LABEL[k]}:</span> {k === "country" ? countryName(filter[k]!) : filter[k]}
@@ -326,7 +326,7 @@ export function DetailView({
                       onClick={() => pick("device")(x.label)}
                       aria-pressed={filter.device === x.label}
                       className={cx(
-                        "h-7 rounded-full border px-2.5 text-[12px] font-medium transition-[border-color,color,transform] active:scale-[0.96]",
+                        "h-9 rounded-full border px-3 text-[12px] font-medium transition-[border-color,color,transform] active:scale-[0.96]",
                         filter.device === x.label ? "border-brand text-ink" : "border-line text-ink-2 hover:border-line-strong hover:text-ink",
                       )}
                     >

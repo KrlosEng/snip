@@ -96,9 +96,7 @@ export function unavailablePage(p: {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>${esc(c.badge)} · Snip</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+<meta name="referrer" content="no-referrer">
 <style>
 :root{
   --bg:#000;--surface:#0b0b0d;--line:#222226;

@@ -325,7 +325,7 @@ function InviteCard({ wsId, invites, disabled }: { wsId: string; invites: Invite
                     Pendiente · {ROLE[i.role]}
                   </p>
                 </div>
-                <button type="button" onClick={() => cancel(i.id)} className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink" aria-label={`Cancelar invitación a ${i.email}`}>
+                <button type="button" onClick={() => cancel(i.id)} className="grid size-10 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink" aria-label={`Cancelar invitación a ${i.email}`}>
                   <X className="size-4" />
                 </button>
               </li>

@@ -1,6 +1,6 @@
 import "server-only";
 import { parseCsv } from "./csv";
-import { linkQuotaError, planOf, UPGRADE } from "./plans";
+import { linkQuotaError, planOf, UPGRADE, usageOf } from "./plans";
 import { createLink, isUnsafe, slugExists } from "./links";
 import { aliasSchema, checkDestination, cleanTags, folderSchema } from "./validation";
 
@@ -56,7 +56,11 @@ export async function importLinks(userId: string, csv: string, ownHosts: string[
   if (!data.length) throw new ImportError("El archivo solo tiene encabezados.");
   if (data.length > IMPORT_MAX_ROWS) throw new ImportError(`Puedes importar hasta ${IMPORT_MAX_ROWS} enlaces por archivo; este tiene ${data.length}.`);
 
-  if (!(await planOf(userId)).limits.csvImport) throw new ImportError(`Importar desde CSV es parte del plan Pro. ${UPGRADE}`);
+  const plan = await planOf(userId);
+  if (!plan.limits.csvImport) throw new ImportError(`Importar desde CSV es parte del plan Pro. ${UPGRADE}`);
+  // La cuota se calcula una vez y se descuenta en memoria (no una consulta por fila).
+  let left = plan.limits.linksPerMonth - (await usageOf(userId)).linksThisMonth;
+  if (left <= 0) throw new ImportError((await linkQuotaError(userId)) ?? "Ya no te quedan enlaces este mes.");
   const result: ImportResult = { created: 0, total: data.length, errors: [] };
   const seen = new Set<string>();
 
@@ -68,9 +72,8 @@ export async function importLinks(userId: string, csv: string, ownHosts: string[
     };
     const fail = (error: string) => result.errors.push({ row: rowNum, error });
 
-    const quota = await linkQuotaError(userId);
-    if (quota) {
-      fail(quota);
+    if (left <= 0) {
+      fail(`Ya no te quedan enlaces este mes (límite de ${plan.limits.linksPerMonth}).`);
       continue;
     }
     const raw = get("url");
@@ -125,6 +128,7 @@ export async function importLinks(userId: string, csv: string, ownHosts: string[
         tags: cleanTags(get("tags").split(/[,;|]/)),
       });
       result.created++;
+      left--;
     } catch {
       fail(alias ? `El alias “${alias}” acaba de ser ocupado.` : "No se pudo crear este enlace.");
     }

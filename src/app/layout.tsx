@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -25,10 +26,10 @@ const themeScript = `(function(){try{var t=localStorage.getItem('snip-theme')||'
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="min-h-dvh">
+        <Script id="snip-theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <Providers>{children}</Providers>
       </body>
     </html>
